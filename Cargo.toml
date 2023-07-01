@@ -1,0 +1,43 @@
+[package]
+name = "cargo-remark"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.72.0"
+
+description = "Cargo subcommand for displaying LLVM optimization remarks from compiling Rust programs."
+repository = "https://github.com/kobzol/cargo-remark"
+authors = ["Jakub Beránek <berykubik@gmail.com>"]
+keywords = [
+    "llvm",
+    "optimization",
+    "remark",
+    "cargo",
+]
+categories = ["development-tools::cargo-plugins"]
+
+readme = "README.md"
+license = "MIT"
+include = [
+    "src/**/*.rs",
+    "Cargo.toml",
+    "README.md"
+]
+
+[dependencies]
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+
+# Data structures
+hashbrown = { version = "0.13", features = ["serde"] }
+fxhash = "0.2"
+
+# Error handling
+anyhow = "1"
+
+# Logging
+log = "0.4"
+env_logger = "0.10"
+
+rustc-demangle = "0.1"
+rayon = "1.7"

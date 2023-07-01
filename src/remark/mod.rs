@@ -47,8 +47,8 @@ pub struct Remark {
 pub fn load_remarks_from_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<Remark>> {
     let path = path.as_ref();
 
-    let file = File::open(path)
-        .with_context(|| format!("Cannot open remark file {}", path.display()))?;
+    let file =
+        File::open(path).with_context(|| format!("Cannot open remark file {}", path.display()))?;
     log::debug!("Parsing {}", path.display());
 
     if file.metadata()?.len() == 0 {
@@ -73,29 +73,31 @@ pub fn load_remarks_from_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<Rem
                                     name: demangle(&remark.function),
                                     location: remark.debug_loc.map(parse_debug_loc),
                                 },
-                                args: remark.args.into_iter().map(|arg| match arg {
-                                    RemarkArg::String(inner) => {
-                                        RemarkArgument::String(inner.string.into_owned())
-                                    }
-                                    RemarkArg::Callee(inner) => {
-                                        RemarkArgument::Callee(Function {
-                                            name: demangle(&inner.callee),
-                                            location: inner.debug_loc.map(parse_debug_loc),
-                                        })
-                                    }
-                                    RemarkArg::Caller(inner) => {
-                                        RemarkArgument::Caller(Function {
-                                            name: demangle(&inner.caller),
-                                            location: inner.debug_loc.map(parse_debug_loc),
-                                        })
-                                    }
-                                    RemarkArg::Reason(inner) => {
-                                        RemarkArgument::Reason(inner.reason.into_owned())
-                                    }
-                                    RemarkArg::Other(inner) => {
-                                        RemarkArgument::Other(inner)
-                                    }
-                                }).collect(),
+                                args: remark
+                                    .args
+                                    .into_iter()
+                                    .map(|arg| match arg {
+                                        RemarkArg::String(inner) => {
+                                            RemarkArgument::String(inner.string.into_owned())
+                                        }
+                                        RemarkArg::Callee(inner) => {
+                                            RemarkArgument::Callee(Function {
+                                                name: demangle(&inner.callee),
+                                                location: inner.debug_loc.map(parse_debug_loc),
+                                            })
+                                        }
+                                        RemarkArg::Caller(inner) => {
+                                            RemarkArgument::Caller(Function {
+                                                name: demangle(&inner.caller),
+                                                location: inner.debug_loc.map(parse_debug_loc),
+                                            })
+                                        }
+                                        RemarkArg::Reason(inner) => {
+                                            RemarkArgument::Reason(inner.reason.into_owned())
+                                        }
+                                        RemarkArg::Other(inner) => RemarkArgument::Other(inner),
+                                    })
+                                    .collect(),
                             };
                             remarks.push(remark);
                         }
@@ -114,28 +116,37 @@ pub fn load_remarks_from_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<Rem
 
 pub fn load_remarks_from_dir<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<Remark>> {
     let dir = path.as_ref().to_path_buf().canonicalize()?;
-    let files: Vec<PathBuf> = std::fs::read_dir(&dir).with_context(|| format!("Could not read remark directory {}", dir.display()))?
+    let files: Vec<PathBuf> = std::fs::read_dir(&dir)
+        .with_context(|| format!("Could not read remark directory {}", dir.display()))?
         .filter_map(|entry| {
             let entry = entry.ok()?;
             if !entry.file_type().ok()?.is_file() {
                 return None;
             }
-            if !entry.file_name().to_str().map(|extension| extension.ends_with(EXPECTED_EXTENSION)).unwrap_or(false) {
+            if !entry
+                .file_name()
+                .to_str()
+                .map(|extension| extension.ends_with(EXPECTED_EXTENSION))
+                .unwrap_or(false)
+            {
                 return None;
             }
             Some(entry.path())
-        }).collect();
+        })
+        .collect();
 
     log::debug!("Parsing {} file(s) from {}", files.len(), dir.display());
 
-    let remarks: Vec<(PathBuf, anyhow::Result<Vec<Remark>>)> = files.into_iter()
+    let remarks: Vec<(PathBuf, anyhow::Result<Vec<Remark>>)> = files
+        .into_iter()
         .map(|file| {
             let remarks = load_remarks_from_file(&file);
             (file, remarks)
         })
         .collect();
 
-    Ok(remarks.into_iter()
+    Ok(remarks
+        .into_iter()
         .filter_map(|(path, result)| match result {
             Ok(remarks) => Some(remarks),
             Err(error) => {
@@ -144,8 +155,7 @@ pub fn load_remarks_from_dir<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<Rema
             }
         })
         .flatten()
-        .collect()
-    )
+        .collect())
 }
 
 fn parse_debug_loc(location: parse::DebugLocation) -> DebugLocation {

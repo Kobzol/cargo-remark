@@ -1,5 +1,5 @@
-use std::borrow::Cow;
 use crate::utils::data_structures::Map;
+use std::borrow::Cow;
 
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
@@ -7,14 +7,14 @@ pub struct DebugLocation<'a> {
     #[serde(borrow)]
     pub file: Cow<'a, str>,
     pub line: u32,
-    pub column: u32
+    pub column: u32,
 }
 
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct RemarkArgString<'a> {
     #[serde(borrow)]
-    pub string: Cow<'a, str>
+    pub string: Cow<'a, str>,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -22,7 +22,7 @@ pub struct RemarkArgString<'a> {
 pub struct RemarkArgCallee<'a> {
     #[serde(borrow)]
     pub callee: Cow<'a, str>,
-    pub debug_loc: Option<DebugLocation<'a>>
+    pub debug_loc: Option<DebugLocation<'a>>,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -30,14 +30,14 @@ pub struct RemarkArgCallee<'a> {
 pub struct RemarkArgCaller<'a> {
     #[serde(borrow)]
     pub caller: Cow<'a, str>,
-    pub debug_loc: Option<DebugLocation<'a>>
+    pub debug_loc: Option<DebugLocation<'a>>,
 }
 
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct RemarkArgReason<'a> {
     #[serde(borrow)]
-    pub reason: Cow<'a, str>
+    pub reason: Cow<'a, str>,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -48,7 +48,7 @@ pub enum RemarkArg<'a> {
     Callee(RemarkArgCallee<'a>),
     Caller(RemarkArgCaller<'a>),
     Reason(RemarkArgReason<'a>),
-    Other(Map<String, String>)
+    Other(Map<String, String>),
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -61,7 +61,7 @@ pub struct MissedRemark<'a> {
     pub debug_loc: Option<DebugLocation<'a>>,
     #[serde(borrow)]
     pub function: Cow<'a, str>,
-    pub args: Vec<RemarkArg<'a>>
+    pub args: Vec<RemarkArg<'a>>,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -69,5 +69,5 @@ pub enum Remark<'a> {
     #[serde(borrow)]
     Missed(MissedRemark<'a>),
     Passed {},
-    Analysis {}
+    Analysis {},
 }

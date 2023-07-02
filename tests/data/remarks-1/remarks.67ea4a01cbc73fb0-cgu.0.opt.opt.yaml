@@ -1,0 +1,262 @@
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: '/foo/rust/library/std/src/sys_common/backtrace.rs', 
+                   Line: 135, Column: 18 }
+Function:        _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+Args:
+  - String:          ''''
+  - Callee:          _ZN4core3ops8function6FnOnce9call_once17hde3380935eb1addfE
+  - String:          ''' inlined into '''
+  - Caller:          _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+    DebugLoc:        { File: '/foo/rust/library/std/src/sys_common/backtrace.rs', 
+                       Line: 131, Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-15030'
+  - String:          ', threshold='
+  - Threshold:       '487'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+  - String:          ':'
+  - Line:            '4'
+  - String:          ':'
+  - Column:          '18'
+  - String:          ';'
+...
+--- !Missed
+Pass:            inline
+Name:            NeverInline
+DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                   Line: 166, Column: 18 }
+Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+Args:
+  - String:          ''''
+  - Callee:          _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+    DebugLoc:        { File: '/foo/rust/library/std/src/sys_common/backtrace.rs', 
+                       Line: 131, Column: 0 }
+  - String:          ''' not inlined into '''
+  - Caller:          '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+    DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                       Line: 166, Column: 0 }
+  - String:          ''' because it should never be inlined '
+  - String:          '(cost=never)'
+  - String:          ': '
+  - Reason:          noinline function attribute
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                   Line: 166, Column: 18 }
+Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+Args:
+  - String:          ''''
+  - Callee:          '_ZN54_$LT$$LP$$RP$$u20$as$u20$std..process..Termination$GT$6report17hc8ee8ce6af31c006E'
+  - String:          ''' inlined into '''
+  - Caller:          '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+    DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                       Line: 166, Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-15030'
+  - String:          ', threshold='
+  - Threshold:       '487'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+  - String:          ':'
+  - Line:            '0'
+  - String:          ':'
+  - Column:          '18'
+  - String:          ';'
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: '/foo/rust/library/core/src/ops/function.rs', 
+                   Line: 250, Column: 5 }
+Function:        _ZN4core3ops8function6FnOnce9call_once17h45d79837d17bfedeE
+Args:
+  - String:          ''''
+  - Callee:          '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+    DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                       Line: 166, Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          _ZN4core3ops8function6FnOnce9call_once17h45d79837d17bfedeE
+    DebugLoc:        { File: '/foo/rust/library/core/src/ops/function.rs', 
+                       Line: 250, Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '0'
+  - String:          ', threshold='
+  - Threshold:       '487'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          _ZN4core3ops8function6FnOnce9call_once17h45d79837d17bfedeE
+  - String:          ':'
+  - Line:            '0'
+  - String:          ':'
+  - Column:          '5'
+  - String:          ';'
+...
+--- !Missed
+Pass:            inline
+Name:            NeverInline
+DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                   Line: 166, Column: 18 }
+Function:        _ZN4core3ops8function6FnOnce9call_once17h45d79837d17bfedeE
+Args:
+  - String:          ''''
+  - Callee:          _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+    DebugLoc:        { File: '/foo/rust/library/std/src/sys_common/backtrace.rs', 
+                       Line: 131, Column: 0 }
+  - String:          ''' not inlined into '''
+  - Caller:          _ZN4core3ops8function6FnOnce9call_once17h45d79837d17bfedeE
+    DebugLoc:        { File: '/foo/rust/library/core/src/ops/function.rs', 
+                       Line: 250, Column: 0 }
+  - String:          ''' because it should never be inlined '
+  - String:          '(cost=never)'
+  - String:          ': '
+  - Reason:          noinline function attribute
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+DebugLoc:        { File: '/foo/rust/library/core/src/ops/function.rs', 
+                   Line: 250, Column: 5 }
+Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+Args:
+  - String:          ''''
+  - Callee:          _ZN4core3ops8function6FnOnce9call_once17h45d79837d17bfedeE
+  - String:          ''' inlined into '''
+  - Caller:          '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+    DebugLoc:        { File: '/foo/rust/library/core/src/ops/function.rs', 
+                       Line: 250, Column: 0 }
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '-15000'
+  - String:          ', threshold='
+  - Threshold:       '487'
+  - String:          ')'
+  - String:          ' at callsite '
+  - String:          '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+  - String:          ':'
+  - Line:            '0'
+  - String:          ':'
+  - Column:          '5'
+  - String:          ';'
+...
+--- !Missed
+Pass:            inline
+Name:            NeverInline
+DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                   Line: 166, Column: 18 }
+Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+Args:
+  - String:          ''''
+  - Callee:          _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+    DebugLoc:        { File: '/foo/rust/library/std/src/sys_common/backtrace.rs', 
+                       Line: 131, Column: 0 }
+  - String:          ''' not inlined into '''
+  - Caller:          '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+    DebugLoc:        { File: '/foo/rust/library/core/src/ops/function.rs', 
+                       Line: 250, Column: 0 }
+  - String:          ''' because it should never be inlined '
+  - String:          '(cost=never)'
+  - String:          ': '
+  - Reason:          noinline function attribute
+...
+--- !Missed
+Pass:            inline
+Name:            NoDefinition
+DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                   Line: 165, Column: 17 }
+Function:        _ZN3std2rt10lang_start17h9096f6f84fb08eb2E
+Args:
+  - Callee:          _ZN3std2rt19lang_start_internal17had90330d479f72f8E
+  - String:          ' will not be inlined into '
+  - Caller:          _ZN3std2rt10lang_start17h9096f6f84fb08eb2E
+    DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                       Line: 159, Column: 0 }
+  - String:          ' because its definition is unavailable'
+...
+--- !Missed
+Pass:            inline
+Name:            NoDefinition
+DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                   Line: 165, Column: 17 }
+Function:        _ZN3std2rt10lang_start17h9096f6f84fb08eb2E
+Args:
+  - Callee:          _ZN3std2rt19lang_start_internal17had90330d479f72f8E
+  - String:          ' will not be inlined into '
+  - Caller:          _ZN3std2rt10lang_start17h9096f6f84fb08eb2E
+    DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                       Line: 159, Column: 0 }
+  - String:          ' because its definition is unavailable'
+...
+--- !Missed
+Pass:            inline
+Name:            NoDefinition
+DebugLoc:        { File: 'src/main.rs', Line: 7, Column: 5 }
+Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+Args:
+  - Callee:          _ZN3std2io5stdio6_print17hdb04fec352560b87E
+  - String:          ' will not be inlined into '
+  - Caller:          _ZN7remarks4main17hc92ae132ef1efa8eE
+    DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
+  - String:          ' because its definition is unavailable'
+...
+--- !Missed
+Pass:            inline
+Name:            NoDefinition
+DebugLoc:        { File: 'src/main.rs', Line: 7, Column: 5 }
+Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+Args:
+  - Callee:          _ZN3std2io5stdio6_print17hdb04fec352560b87E
+  - String:          ' will not be inlined into '
+  - Caller:          _ZN7remarks4main17hc92ae132ef1efa8eE
+    DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
+  - String:          ' because its definition is unavailable'
+...
+--- !Missed
+Pass:            inline
+Name:            NeverInline
+DebugLoc:        { File: 'src/main.rs', Line: 8, Column: 5 }
+Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+Args:
+  - String:          ''''
+  - Callee:          _ZN7remarks3foo17h78901fc1396afa9fE
+    DebugLoc:        { File: 'src/main.rs', Line: 2, Column: 0 }
+  - String:          ''' not inlined into '''
+  - Caller:          _ZN7remarks4main17hc92ae132ef1efa8eE
+    DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
+  - String:          ''' because it should never be inlined '
+  - String:          '(cost=never)'
+  - String:          ': '
+  - Reason:          noinline function attribute
+...
+--- !Passed
+Pass:            inline
+Name:            Inlined
+Function:        main
+Args:
+  - String:          ''''
+  - Callee:          _ZN3std2rt10lang_start17h9096f6f84fb08eb2E
+    DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                       Line: 159, Column: 0 }
+  - String:          ''' inlined into '''
+  - Caller:          main
+  - String:          ''''
+  - String:          ' with '
+  - String:          '(cost='
+  - Cost:            '15'
+  - String:          ', threshold='
+  - Threshold:       '375'
+  - String:          ')'
+...

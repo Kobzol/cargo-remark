@@ -51,3 +51,4 @@ rayon = "1.7"
 
 [dev-dependencies]
 insta = "1.29"
+tempfile = "3.5"

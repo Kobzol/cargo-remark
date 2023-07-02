@@ -1,0 +1,636 @@
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: '/foo/rust/library/std/src/sys_common/backtrace.rs', 
+                   Line: 131, Column: 0 }
+Function:        _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '6'
+  - String:          '; Delta: '
+  - Delta:           '6'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: '/foo/rust/library/std/src/sys_common/backtrace.rs', 
+                   Line: 131, Column: 0 }
+Function:        _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '6'
+  - String:          ' to '
+  - MIInstrsAfter:   '5'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: '/foo/rust/library/std/src/sys_common/backtrace.rs', 
+                   Line: 131, Column: 0 }
+Function:        _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+Args:
+  - NumStackBytes:   '8'
+  - String:          ' stack bytes in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: '/foo/rust/library/std/src/sys_common/backtrace.rs', 
+                   Line: 131, Column: 0 }
+Function:        _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+Args:
+  - Pass:            'Prologue/Epilogue Insertion & Frame Finalization'
+  - String:          ': Function: '
+  - Function:        _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '5'
+  - String:          ' to '
+  - MIInstrsAfter:   '7'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: '/foo/rust/library/std/src/sys_common/backtrace.rs', 
+                   Line: 131, Column: 0 }
+Function:        _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+Args:
+  - String:          "\nFunction: _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          ''
+  - String:          ': '
+  - INST_:           '4'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: '/foo/rust/library/std/src/sys_common/backtrace.rs', 
+                   Line: 131, Column: 0 }
+Function:        _ZN3std10sys_common9backtrace28__rust_begin_short_backtrace17h7208ef7aa68440d8E
+Args:
+  - NumInstructions: '5'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                   Line: 166, Column: 0 }
+Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '9'
+  - String:          '; Delta: '
+  - Delta:           '9'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                   Line: 166, Column: 0 }
+Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+Args:
+  - Pass:            Simple Register Coalescing
+  - String:          ': Function: '
+  - Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '9'
+  - String:          ' to '
+  - MIInstrsAfter:   '8'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                   Line: 166, Column: 0 }
+Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '8'
+  - String:          ' to '
+  - MIInstrsAfter:   '6'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                   Line: 166, Column: 0 }
+Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+Args:
+  - NumStackBytes:   '8'
+  - String:          ' stack bytes in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                   Line: 166, Column: 0 }
+Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+Args:
+  - Pass:            'Prologue/Epilogue Insertion & Frame Finalization'
+  - String:          ': Function: '
+  - Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '6'
+  - String:          ' to '
+  - MIInstrsAfter:   '8'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                   Line: 166, Column: 0 }
+Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+Args:
+  - String:          "\nFunction: _ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          ''
+  - String:          ': '
+  - INST_:           '6'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: '/foo/rust/library/std/src/rt.rs', 
+                   Line: 166, Column: 0 }
+Function:        '_ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h8385278cd9457b2fE'
+Args:
+  - NumInstructions: '6'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: '/foo/rust/library/core/src/ops/function.rs', 
+                   Line: 250, Column: 0 }
+Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '9'
+  - String:          '; Delta: '
+  - Delta:           '9'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: '/foo/rust/library/core/src/ops/function.rs', 
+                   Line: 250, Column: 0 }
+Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+Args:
+  - Pass:            Simple Register Coalescing
+  - String:          ': Function: '
+  - Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '9'
+  - String:          ' to '
+  - MIInstrsAfter:   '8'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: '/foo/rust/library/core/src/ops/function.rs', 
+                   Line: 250, Column: 0 }
+Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '8'
+  - String:          ' to '
+  - MIInstrsAfter:   '6'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: '/foo/rust/library/core/src/ops/function.rs', 
+                   Line: 250, Column: 0 }
+Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+Args:
+  - NumStackBytes:   '8'
+  - String:          ' stack bytes in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: '/foo/rust/library/core/src/ops/function.rs', 
+                   Line: 250, Column: 0 }
+Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+Args:
+  - Pass:            'Prologue/Epilogue Insertion & Frame Finalization'
+  - String:          ': Function: '
+  - Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '6'
+  - String:          ' to '
+  - MIInstrsAfter:   '8'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: '/foo/rust/library/core/src/ops/function.rs', 
+                   Line: 250, Column: 0 }
+Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+Args:
+  - String:          "\nFunction: _ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          ''
+  - String:          ': '
+  - INST_:           '6'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: '/foo/rust/library/core/src/ops/function.rs', 
+                   Line: 250, Column: 0 }
+Function:        '_ZN4core3ops8function6FnOnce40call_once$u7b$$u7b$vtable.shim$u7d$$u7d$17hd822f6cb09e595dcE'
+Args:
+  - NumInstructions: '6'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: '/foo/rust/library/core/src/ptr/mod.rs', 
+                   Line: 497, Column: 0 }
+Function:        '_ZN4core3ptr85drop_in_place$LT$std..rt..lang_start$LT$$LP$$RP$$GT$..$u7b$$u7b$closure$u7d$$u7d$$GT$17hffcc5d4d05ada4bbE'
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        '_ZN4core3ptr85drop_in_place$LT$std..rt..lang_start$LT$$LP$$RP$$GT$..$u7b$$u7b$closure$u7d$$u7d$$GT$17hffcc5d4d05ada4bbE'
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '1'
+  - String:          '; Delta: '
+  - Delta:           '1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: '/foo/rust/library/core/src/ptr/mod.rs', 
+                   Line: 497, Column: 0 }
+Function:        '_ZN4core3ptr85drop_in_place$LT$std..rt..lang_start$LT$$LP$$RP$$GT$..$u7b$$u7b$closure$u7d$$u7d$$GT$17hffcc5d4d05ada4bbE'
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: '/foo/rust/library/core/src/ptr/mod.rs', 
+                   Line: 497, Column: 0 }
+Function:        '_ZN4core3ptr85drop_in_place$LT$std..rt..lang_start$LT$$LP$$RP$$GT$..$u7b$$u7b$closure$u7d$$u7d$$GT$17hffcc5d4d05ada4bbE'
+Args:
+  - String:          "\nFunction: _ZN4core3ptr85drop_in_place$LT$std..rt..lang_start$LT$$LP$$RP$$GT$..$u7b$$u7b$closure$u7d$$u7d$$GT$17hffcc5d4d05ada4bbE"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+DebugLoc:        { File: '/foo/rust/library/core/src/ptr/mod.rs', 
+                   Line: 497, Column: 1 }
+Function:        '_ZN4core3ptr85drop_in_place$LT$std..rt..lang_start$LT$$LP$$RP$$GT$..$u7b$$u7b$closure$u7d$$u7d$$GT$17hffcc5d4d05ada4bbE'
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          ''
+  - String:          ': '
+  - INST_:           '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: '/foo/rust/library/core/src/ptr/mod.rs', 
+                   Line: 497, Column: 0 }
+Function:        '_ZN4core3ptr85drop_in_place$LT$std..rt..lang_start$LT$$LP$$RP$$GT$..$u7b$$u7b$closure$u7d$$u7d$$GT$17hffcc5d4d05ada4bbE'
+Args:
+  - NumInstructions: '1'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
+Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '15'
+  - String:          '; Delta: '
+  - Delta:           '15'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
+Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+Args:
+  - Pass:            Merge disjoint stack slots
+  - String:          ': Function: '
+  - Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '15'
+  - String:          ' to '
+  - MIInstrsAfter:   '13'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
+Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '13'
+  - String:          ' to '
+  - MIInstrsAfter:   '12'
+  - String:          '; Delta: '
+  - Delta:           '-1'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
+Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+Args:
+  - NumStackBytes:   '56'
+  - String:          ' stack bytes in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
+Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+Args:
+  - Pass:            'Prologue/Epilogue Insertion & Frame Finalization'
+  - String:          ': Function: '
+  - Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '12'
+  - String:          ' to '
+  - MIInstrsAfter:   '14'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
+Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+Args:
+  - String:          "\nFunction: _ZN7remarks4main17hc92ae132ef1efa8eE"
+  - String:          "\nOffset: [SP"
+  - Offset:          '-48'
+  - String:          '], Type: '
+  - Type:            Variable
+  - String:          ', Align: '
+  - Align:           '8'
+  - String:          ', Size: '
+  - Size:            '48'
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          ''
+  - String:          ': '
+  - INST_:           '12'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
+Function:        _ZN7remarks4main17hc92ae132ef1efa8eE
+Args:
+  - NumInstructions: '12'
+  - String:          ' instructions in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        main
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '23'
+  - String:          '; Delta: '
+  - Delta:           '23'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        main
+Args:
+  - Pass:            Merge disjoint stack slots
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '23'
+  - String:          ' to '
+  - MIInstrsAfter:   '21'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        main
+Args:
+  - Pass:            Simple Register Coalescing
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '21'
+  - String:          ' to '
+  - MIInstrsAfter:   '19'
+  - String:          '; Delta: '
+  - Delta:           '-2'
+...
+--- !Missed
+Pass:            regalloc
+Name:            SpillReloadCopies
+Function:        main
+Args:
+  - NumVRCopies:     '1'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '1.000000e+00'
+  - String:          ' total copies cost '
+  - String:          generated in function
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        main
+Args:
+  - Pass:            Virtual Register Rewriter
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '19'
+  - String:          ' to '
+  - MIInstrsAfter:   '13'
+  - String:          '; Delta: '
+  - Delta:           '-6'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+Function:        main
+Args:
+  - NumStackBytes:   '8'
+  - String:          ' stack bytes in function'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        main
+Args:
+  - Pass:            'Prologue/Epilogue Insertion & Frame Finalization'
+  - String:          ': Function: '
+  - Function:        main
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '13'
+  - String:          ' to '
+  - MIInstrsAfter:   '15'
+  - String:          '; Delta: '
+  - Delta:           '2'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+Function:        main
+Args:
+  - String:          "\nFunction: main"
+  - String:          "\nOffset: [SP"
+  - Offset:          '-8'
+  - String:          '], Type: '
+  - Type:            Variable
+  - String:          ', Align: '
+  - Align:           '8'
+  - String:          ', Size: '
+  - Size:            '8'
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        main
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          ''
+  - String:          ': '
+  - INST_:           '12'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+Function:        main
+Args:
+  - NumInstructions: '12'
+  - String:          ' instructions in function'
+...

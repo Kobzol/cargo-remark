@@ -1,0 +1,390 @@
+--- !Missed
+Pass:            sdagisel
+Name:            FastISelFailure
+Function:        __rust_alloc
+Args:
+  - String:          FastISel missed call
+  - String:          ': '
+  - String:          '  %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1)'
+  - String:          ' (in function: __rust_alloc)'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        __rust_alloc
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        __rust_alloc
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '7'
+  - String:          '; Delta: '
+  - Delta:           '7'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        __rust_alloc
+Args:
+  - Pass:            Fast Register Allocator
+  - String:          ': Function: '
+  - Function:        __rust_alloc
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '7'
+  - String:          ' to '
+  - MIInstrsAfter:   '1'
+  - String:          '; Delta: '
+  - Delta:           '-6'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+Function:        __rust_alloc
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+Function:        __rust_alloc
+Args:
+  - String:          "\nFunction: __rust_alloc"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        __rust_alloc
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          ''
+  - String:          ': '
+  - INST_:           '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+Function:        __rust_alloc
+Args:
+  - NumInstructions: '1'
+  - String:          ' instructions in function'
+...
+--- !Missed
+Pass:            sdagisel
+Name:            FastISelFailure
+Function:        __rust_dealloc
+Args:
+  - String:          FastISel missed call
+  - String:          ': '
+  - String:          '  tail call void @__rdl_dealloc(ptr %0, i64 %1, i64 %2)'
+  - String:          ' (in function: __rust_dealloc)'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        __rust_dealloc
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        __rust_dealloc
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '10'
+  - String:          '; Delta: '
+  - Delta:           '10'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        __rust_dealloc
+Args:
+  - Pass:            Fast Register Allocator
+  - String:          ': Function: '
+  - Function:        __rust_dealloc
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '10'
+  - String:          ' to '
+  - MIInstrsAfter:   '1'
+  - String:          '; Delta: '
+  - Delta:           '-9'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+Function:        __rust_dealloc
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+Function:        __rust_dealloc
+Args:
+  - String:          "\nFunction: __rust_dealloc"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        __rust_dealloc
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          ''
+  - String:          ': '
+  - INST_:           '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+Function:        __rust_dealloc
+Args:
+  - NumInstructions: '1'
+  - String:          ' instructions in function'
+...
+--- !Missed
+Pass:            sdagisel
+Name:            FastISelFailure
+Function:        __rust_realloc
+Args:
+  - String:          FastISel missed call
+  - String:          ': '
+  - String:          '  %5 = tail call ptr @__rdl_realloc(ptr %0, i64 %1, i64 %2, i64 %3)'
+  - String:          ' (in function: __rust_realloc)'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        __rust_realloc
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        __rust_realloc
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '13'
+  - String:          '; Delta: '
+  - Delta:           '13'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        __rust_realloc
+Args:
+  - Pass:            Fast Register Allocator
+  - String:          ': Function: '
+  - Function:        __rust_realloc
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '13'
+  - String:          ' to '
+  - MIInstrsAfter:   '1'
+  - String:          '; Delta: '
+  - Delta:           '-12'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+Function:        __rust_realloc
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+Function:        __rust_realloc
+Args:
+  - String:          "\nFunction: __rust_realloc"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        __rust_realloc
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          ''
+  - String:          ': '
+  - INST_:           '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+Function:        __rust_realloc
+Args:
+  - NumInstructions: '1'
+  - String:          ' instructions in function'
+...
+--- !Missed
+Pass:            sdagisel
+Name:            FastISelFailure
+Function:        __rust_alloc_zeroed
+Args:
+  - String:          FastISel missed call
+  - String:          ': '
+  - String:          '  %3 = tail call ptr @__rdl_alloc_zeroed(i64 %0, i64 %1)'
+  - String:          ' (in function: __rust_alloc_zeroed)'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        __rust_alloc_zeroed
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        __rust_alloc_zeroed
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '7'
+  - String:          '; Delta: '
+  - Delta:           '7'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        __rust_alloc_zeroed
+Args:
+  - Pass:            Fast Register Allocator
+  - String:          ': Function: '
+  - Function:        __rust_alloc_zeroed
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '7'
+  - String:          ' to '
+  - MIInstrsAfter:   '1'
+  - String:          '; Delta: '
+  - Delta:           '-6'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+Function:        __rust_alloc_zeroed
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+Function:        __rust_alloc_zeroed
+Args:
+  - String:          "\nFunction: __rust_alloc_zeroed"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        __rust_alloc_zeroed
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          ''
+  - String:          ': '
+  - INST_:           '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+Function:        __rust_alloc_zeroed
+Args:
+  - NumInstructions: '1'
+  - String:          ' instructions in function'
+...
+--- !Missed
+Pass:            sdagisel
+Name:            FastISelFailure
+Function:        __rust_alloc_error_handler
+Args:
+  - String:          FastISel missed call
+  - String:          ': '
+  - String:          '  tail call void @__rg_oom(i64 %0, i64 %1)'
+  - String:          ' (in function: __rust_alloc_error_handler)'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        __rust_alloc_error_handler
+Args:
+  - Pass:            'X86 DAG->DAG Instruction Selection'
+  - String:          ': Function: '
+  - Function:        __rust_alloc_error_handler
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '0'
+  - String:          ' to '
+  - MIInstrsAfter:   '7'
+  - String:          '; Delta: '
+  - Delta:           '7'
+...
+--- !Analysis
+Pass:            size-info
+Name:            FunctionMISizeChange
+Function:        __rust_alloc_error_handler
+Args:
+  - Pass:            Fast Register Allocator
+  - String:          ': Function: '
+  - Function:        __rust_alloc_error_handler
+  - String:          ': '
+  - String:          'MI Instruction count changed from '
+  - MIInstrsBefore:  '7'
+  - String:          ' to '
+  - MIInstrsAfter:   '1'
+  - String:          '; Delta: '
+  - Delta:           '-6'
+...
+--- !Analysis
+Pass:            prologepilog
+Name:            StackSize
+Function:        __rust_alloc_error_handler
+Args:
+  - NumStackBytes:   '0'
+  - String:          ' stack bytes in function'
+...
+--- !Analysis
+Pass:            stack-frame-layout
+Name:            StackLayout
+Function:        __rust_alloc_error_handler
+Args:
+  - String:          "\nFunction: __rust_alloc_error_handler"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionMix
+Function:        __rust_alloc_error_handler
+Args:
+  - String:          'BasicBlock: '
+  - BasicBlock:      ''
+  - String:          "\n"
+  - String:          ''
+  - String:          ': '
+  - INST_:           '1'
+  - String:          "\n"
+...
+--- !Analysis
+Pass:            asm-printer
+Name:            InstructionCount
+Function:        __rust_alloc_error_handler
+Args:
+  - NumInstructions: '1'
+  - String:          ' instructions in function'
+...

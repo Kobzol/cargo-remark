@@ -23,8 +23,12 @@
         $("#remark-table").DataTable({
             data: dataSet,
                 "lengthMenu": [[100, 500, -1], [100, 500, "All"]],
-                columns: [{ title: "Name", data: "name" }],
-
+                columns: [
+                    {title: "Kind", data: "name"},
+                    {title: "Location", data: "location"},
+                    {title: "Function", data: "function"},
+                    {title: "Message", data: "message"},
+                ],
         });
         $("#remark-table").colResizable();
     });

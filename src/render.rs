@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
@@ -7,6 +8,7 @@ use askama::Template;
 use rust_embed::RustEmbed;
 
 use crate::remark::index::RemarkIndex;
+use crate::remark::{Location, MessagePart};
 
 #[derive(RustEmbed)]
 #[folder = "templates/assets"]
@@ -15,6 +17,9 @@ struct StaticAssets;
 #[derive(serde::Serialize)]
 struct RemarkEntry<'a> {
     name: &'a str,
+    location: Option<String>,
+    function: &'a str,
+    message: String,
 }
 
 #[derive(Template)]
@@ -31,7 +36,16 @@ pub fn render_remarks(index: RemarkIndex, output_dir: &Path) -> anyhow::Result<(
     let remarks = index
         .remarks()
         .iter()
-        .map(|r| RemarkEntry { name: &r.name })
+        .map(|r| RemarkEntry {
+            name: &r.name,
+            location: r
+                .function
+                .location
+                .as_ref()
+                .map(|l| render_location(l, None)),
+            function: &r.function.name,
+            message: format_message(&r.message),
+        })
         .collect::<Vec<_>>();
     let index_page = IndexTemplate { remarks: &remarks };
     render_to_file(&index_page, &output_dir.join("index.html"))?;
@@ -46,16 +60,45 @@ pub fn render_remarks(index: RemarkIndex, output_dir: &Path) -> anyhow::Result<(
         std::fs::write(path, data).context("Cannot copy asset file to output directory")?;
     }
 
-    // for (source_file, remarks) in index.files() {
-    //     let path = resolve_path(source_dir, &source_file);
-    //     let file = std::fs::read_to_string(&path)
-    //         .with_context(|| format!("Cannot read source file {}", path.display()))?;
-    //     println!("{}", file);
-    // }
-
     Ok(())
 }
 
+fn format_message(parts: &[MessagePart]) -> String {
+    let mut buffer = String::with_capacity(32);
+    for part in parts {
+        match part {
+            MessagePart::String(string) => buffer.push_str(string),
+            MessagePart::AnnotatedString { message, location } => {
+                buffer.push_str(&render_location(location, Some(message)))
+            }
+        }
+    }
+    buffer
+}
+
+// TODO: remove allocation(s) by writing into a fmt buffer
+fn render_location(location: &Location, label: Option<&str>) -> String {
+    let label = label.map(Cow::from).unwrap_or_else(|| {
+        format!("{}:{}:{}", location.file, location.line, location.column).into()
+    });
+
+    format!(
+        "<a href='{}#L{}'>{label}</a>",
+        path_to_relative_url(&location.file),
+        location.line
+    )
+}
+
+fn path_to_relative_url(path: &str) -> String {
+    path.replace('/', "_")
+}
+
+// for (source_file, remarks) in index.files() {
+//     let path = resolve_path(source_dir, &source_file);
+//     let file = std::fs::read_to_string(&path)
+//         .with_context(|| format!("Cannot read source file {}", path.display()))?;
+//     println!("{}", file);
+// }
 // fn resolve_path<'a>(root_dir: &Path, path: &'a Path) -> Cow<'a, Path> {
 //     if path.is_absolute() {
 //         path.into()

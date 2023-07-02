@@ -1,13 +1,16 @@
-use anyhow::Context;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use serde::Deserialize;
+use std::borrow::Cow;
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 
-use crate::remark::parse::RemarkArg;
+use anyhow::Context;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use serde::Deserialize;
+use serde_yaml::Value;
+
+use crate::remark::parse::{RemarkArg, RemarkArgCallee, RemarkArgCaller};
 use crate::utils::callback::LoadCallback;
-use crate::utils::data_structures::Map;
 use crate::utils::timing::time_block_log;
 
 pub mod index;
@@ -17,7 +20,7 @@ mod parse;
 const EXPECTED_EXTENSION: &str = ".opt.yaml";
 
 #[derive(Debug)]
-pub struct DebugLocation {
+pub struct Location {
     pub file: String,
     pub line: u32,
     pub column: u32,
@@ -26,16 +29,13 @@ pub struct DebugLocation {
 #[derive(Debug)]
 pub struct Function {
     pub name: String,
-    pub location: Option<DebugLocation>,
+    pub location: Option<Location>,
 }
 
 #[derive(Debug)]
-pub enum RemarkArgument {
+pub enum MessagePart {
     String(String),
-    Callee(Function),
-    Caller(Function),
-    Reason(String),
-    Other(Map<String, String>),
+    AnnotatedString { message: String, location: Location },
 }
 
 #[derive(Debug)]
@@ -43,7 +43,7 @@ pub struct Remark {
     pub pass: String,
     pub name: String,
     pub function: Function,
-    pub args: Vec<RemarkArgument>,
+    pub message: Vec<MessagePart>,
 }
 
 pub fn load_remarks_from_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<Remark>> {
@@ -79,30 +79,7 @@ fn parse_remarks<R: std::io::Read>(reader: R) -> Vec<Remark> {
                                 name: demangle(&remark.function),
                                 location: remark.debug_loc.map(parse_debug_loc),
                             },
-                            args: remark
-                                .args
-                                .into_iter()
-                                .map(|arg| match arg {
-                                    RemarkArg::String(inner) => {
-                                        RemarkArgument::String(inner.string.into_owned())
-                                    }
-                                    RemarkArg::Callee(inner) => RemarkArgument::Callee(Function {
-                                        name: demangle(&inner.callee),
-                                        location: inner.debug_loc.map(parse_debug_loc),
-                                    }),
-                                    RemarkArg::Caller(inner) => RemarkArgument::Caller(Function {
-                                        name: demangle(&inner.caller),
-                                        location: inner.debug_loc.map(parse_debug_loc),
-                                    }),
-                                    RemarkArg::Reason(inner) => {
-                                        RemarkArgument::Reason(inner.reason.into_owned())
-                                    }
-                                    RemarkArg::Other(_inner) => {
-                                        // TODO
-                                        RemarkArgument::Other(Default::default())
-                                    }
-                                })
-                                .collect(),
+                            message: construct_message(remark.args),
                         };
                         remarks.push(remark);
                     }
@@ -116,6 +93,79 @@ fn parse_remarks<R: std::io::Read>(reader: R) -> Vec<Remark> {
         }
     }
     remarks
+}
+
+fn construct_message(arguments: Vec<RemarkArg>) -> Vec<MessagePart> {
+    let mut parts = vec![];
+    let mut buffer = String::new();
+
+    let add_annotated = |part: MessagePart, buffer: &mut String, message: &mut Vec<MessagePart>| {
+        if !buffer.is_empty() {
+            message.push(MessagePart::String(std::mem::take(buffer)));
+        }
+        message.push(part);
+    };
+    let aggregate_keys = |buffer: &mut String, map: BTreeMap<Cow<'_, str>, Value>| {
+        buffer.extend(map.into_values().filter_map(|v| match v {
+            Value::Bool(value) => Some(value.to_string()),
+            Value::Number(value) => Some(value.to_string()),
+            Value::String(value) => Some(value),
+            _ => None,
+        }));
+    };
+
+    for arg in arguments {
+        match arg {
+            RemarkArg::String(inner) => buffer.push_str(&inner.string),
+            RemarkArg::Callee(RemarkArgCallee {
+                callee: function,
+                debug_loc: Some(location),
+            })
+            | RemarkArg::Caller(RemarkArgCaller {
+                caller: function,
+                debug_loc: Some(location),
+            }) => add_annotated(
+                MessagePart::AnnotatedString {
+                    message: demangle(&function),
+                    location: parse_debug_loc(location),
+                },
+                &mut buffer,
+                &mut parts,
+            ),
+            RemarkArg::Callee(RemarkArgCallee {
+                callee: function,
+                debug_loc: None,
+            })
+            | RemarkArg::Caller(RemarkArgCaller {
+                caller: function,
+                debug_loc: None,
+            }) => buffer.push_str(&demangle(&function)),
+            RemarkArg::Reason(inner) => buffer.push_str(&inner.reason),
+            RemarkArg::Other(mut inner) => {
+                if let Some(location) = inner
+                    .remove("DebugLoc")
+                    .and_then(|l| parse::DebugLocation::deserialize(l).ok())
+                {
+                    let location = parse_debug_loc(location);
+                    let mut message = String::new();
+                    aggregate_keys(&mut message, inner);
+                    add_annotated(
+                        MessagePart::AnnotatedString { message, location },
+                        &mut buffer,
+                        &mut parts,
+                    );
+                } else {
+                    aggregate_keys(&mut buffer, inner);
+                }
+            }
+        };
+    }
+
+    if !buffer.is_empty() {
+        parts.push(MessagePart::String(buffer));
+    }
+
+    parts
 }
 
 pub fn load_remarks_from_dir<P: AsRef<Path>>(
@@ -178,8 +228,8 @@ pub fn load_remarks_from_dir<P: AsRef<Path>>(
     Ok(remarks)
 }
 
-fn parse_debug_loc(location: parse::DebugLocation) -> DebugLocation {
-    DebugLocation {
+fn parse_debug_loc(location: parse::DebugLocation) -> Location {
+    Location {
         file: location.file.into_owned(),
         line: location.line,
         column: location.column,
@@ -216,25 +266,16 @@ Args:
                 function: Function {
                     name: "__rust_alloc",
                     location: Some(
-                        DebugLocation {
+                        Location {
                             file: "/std/src/sys_common/backtrace.rs",
                             line: 131,
                             column: 0,
                         },
                     ),
                 },
-                args: [
+                message: [
                     String(
-                        "FastISel missed call",
-                    ),
-                    String(
-                        ": ",
-                    ),
-                    String(
-                        "  %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1)",
-                    ),
-                    String(
-                        " (in function: __rust_alloc)",
+                        "FastISel missed call:   %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1) (in function: __rust_alloc)",
                     ),
                 ],
             },
@@ -278,35 +319,25 @@ Args:
                 function: Function {
                     name: "std::rt::lang_start::h9096f6f84fb08eb2",
                     location: Some(
-                        DebugLocation {
+                        Location {
                             file: "/foo/rust/rust/library/std/src/rt.rs",
                             line: 165,
                             column: 17,
                         },
                     ),
                 },
-                args: [
-                    Callee(
-                        Function {
-                            name: "std::rt::lang_start_internal::had90330d479f72f8",
-                            location: None,
-                        },
-                    ),
+                message: [
                     String(
-                        " will not be inlined into ",
+                        "_ZN3std2rt19lang_start_internal17had90330d479f72f8E will not be inlined into ",
                     ),
-                    Caller(
-                        Function {
-                            name: "std::rt::lang_start::h9096f6f84fb08eb2",
-                            location: Some(
-                                DebugLocation {
-                                    file: "/foo/rust/rust/library/std/src/rt.rs",
-                                    line: 159,
-                                    column: 0,
-                                },
-                            ),
+                    AnnotatedString {
+                        message: "_ZN3std2rt10lang_start17h9096f6f84fb08eb2E",
+                        location: Location {
+                            file: "/foo/rust/rust/library/std/src/rt.rs",
+                            line: 159,
+                            column: 0,
                         },
-                    ),
+                    },
                     String(
                         " because its definition is unavailable",
                     ),
@@ -318,35 +349,25 @@ Args:
                 function: Function {
                     name: "remarks::main::hc92ae132ef1efa8e",
                     location: Some(
-                        DebugLocation {
+                        Location {
                             file: "src/main.rs",
                             line: 7,
                             column: 5,
                         },
                     ),
                 },
-                args: [
-                    Callee(
-                        Function {
-                            name: "std::io::stdio::_print::hdb04fec352560b87",
-                            location: None,
-                        },
-                    ),
+                message: [
                     String(
-                        " will not be inlined into ",
+                        "_ZN3std2io5stdio6_print17hdb04fec352560b87E will not be inlined into ",
                     ),
-                    Caller(
-                        Function {
-                            name: "remarks::main::hc92ae132ef1efa8e",
-                            location: Some(
-                                DebugLocation {
-                                    file: "src/main.rs",
-                                    line: 6,
-                                    column: 0,
-                                },
-                            ),
+                    AnnotatedString {
+                        message: "_ZN7remarks4main17hc92ae132ef1efa8eE",
+                        location: Location {
+                            file: "src/main.rs",
+                            line: 6,
+                            column: 0,
                         },
-                    ),
+                    },
                     String(
                         " because its definition is unavailable",
                     ),
@@ -377,18 +398,9 @@ Args:
                     name: "__rust_alloc",
                     location: None,
                 },
-                args: [
+                message: [
                     String(
-                        "FastISel missed call",
-                    ),
-                    String(
-                        ": ",
-                    ),
-                    String(
-                        "  %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1)",
-                    ),
-                    String(
-                        " (in function: __rust_alloc)",
+                        "FastISel missed call:   %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1) (in function: __rust_alloc)",
                     ),
                 ],
             },

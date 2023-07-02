@@ -1,5 +1,5 @@
-use crate::utils::data_structures::Map;
 use std::borrow::Cow;
+use std::collections::BTreeMap;
 
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
@@ -48,7 +48,7 @@ pub enum RemarkArg<'a> {
     Caller(RemarkArgCaller<'a>),
     Reason(RemarkArgReason<'a>),
     #[serde(borrow)]
-    Other(Map<Cow<'a, str>, serde_yaml::Value>),
+    Other(BTreeMap<Cow<'a, str>, serde_yaml::Value>),
 }
 
 #[derive(serde::Deserialize, Debug)]

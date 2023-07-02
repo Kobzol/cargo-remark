@@ -1,13 +1,14 @@
+use anyhow::Context;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use serde::Deserialize;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 
-use anyhow::Context;
-use serde::Deserialize;
-
 use crate::remark::parse::RemarkArg;
+use crate::utils::callback::LoadCallback;
 use crate::utils::data_structures::Map;
-use crate::utils::timing::time_block;
+use crate::utils::timing::time_block_log;
 
 pub mod index;
 mod parse;
@@ -59,7 +60,7 @@ pub fn load_remarks_from_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<Rem
 
     let reader = BufReader::new(file);
 
-    let remarks = time_block("Parse remark file", || parse_remarks(reader));
+    let remarks = time_block_log("Parsed remark file", || parse_remarks(reader));
     Ok(remarks)
 }
 
@@ -96,7 +97,10 @@ fn parse_remarks<R: std::io::Read>(reader: R) -> Vec<Remark> {
                                     RemarkArg::Reason(inner) => {
                                         RemarkArgument::Reason(inner.reason.into_owned())
                                     }
-                                    RemarkArg::Other(inner) => RemarkArgument::Other(inner),
+                                    RemarkArg::Other(_inner) => {
+                                        // TODO
+                                        RemarkArgument::Other(Default::default())
+                                    }
                                 })
                                 .collect(),
                         };
@@ -114,7 +118,10 @@ fn parse_remarks<R: std::io::Read>(reader: R) -> Vec<Remark> {
     remarks
 }
 
-pub fn load_remarks_from_dir<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<Remark>> {
+pub fn load_remarks_from_dir<P: AsRef<Path>>(
+    path: P,
+    callback: Option<&(dyn LoadCallback + Send + Sync)>,
+) -> anyhow::Result<Vec<Remark>> {
     let dir = path.as_ref().to_path_buf().canonicalize()?;
     let files: Vec<PathBuf> = std::fs::read_dir(&dir)
         .with_context(|| format!("Could not read remark directory {}", dir.display()))?
@@ -137,15 +144,22 @@ pub fn load_remarks_from_dir<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<Rema
 
     log::debug!("Parsing {} file(s) from {}", files.len(), dir.display());
 
+    if let Some(callback) = callback {
+        callback.start(files.len() as u64);
+    }
+
     let remarks: Vec<(PathBuf, anyhow::Result<Vec<Remark>>)> = files
-        .into_iter()
+        .into_par_iter()
         .map(|file| {
             let remarks = load_remarks_from_file(&file);
+            if let Some(callback) = callback {
+                callback.advance();
+            }
             (file, remarks)
         })
         .collect();
 
-    Ok(remarks
+    let remarks = remarks
         .into_iter()
         .filter_map(|(path, result)| match result {
             Ok(remarks) => Some(remarks),
@@ -155,7 +169,13 @@ pub fn load_remarks_from_dir<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<Rema
             }
         })
         .flatten()
-        .collect())
+        .collect();
+
+    if let Some(callback) = callback {
+        callback.finish();
+    }
+
+    Ok(remarks)
 }
 
 fn parse_debug_loc(location: parse::DebugLocation) -> DebugLocation {
@@ -423,5 +443,26 @@ Args:
   - Delta:           '-6'
 ..."#;
         assert!(parse_remarks(input.as_bytes()).is_empty());
+    }
+
+    #[test]
+    fn parse_gvn() {
+        let input = r#"--- !Missed
+Pass:            gvn
+Name:            LoadClobbered
+DebugLoc:        { File: '/projects/personal/rust/rust/library/core/src/result.rs', 
+                   Line: 1948, Column: 15 }
+Function:        '_ZN5alloc7raw_vec19RawVec$LT$T$C$A$GT$14grow_amortized17ha53db71e3f649c60E'
+Args:
+  - String:          'load of type '
+  - Type:            i64
+  - String:          ' not eliminated'
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     call
+    DebugLoc:        { File: '/projects/personal/rust/rust/library/alloc/src/raw_vec.rs', 
+                       Line: 404, Column: 19 }
+..."#;
+
+        assert_eq!(parse_remarks(input.as_bytes()).len(), 1);
     }
 }

@@ -2,10 +2,13 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use env_logger::Env;
+use indicatif::ProgressBar;
 
 use cargo_remark::remark::index::RemarkIndex;
 use cargo_remark::remark::load_remarks_from_dir;
-use cargo_remark::render::render_index;
+use cargo_remark::render::render_remarks;
+use cargo_remark::utils::callback::LoadCallback;
+use cargo_remark::utils::timing::time_block_print;
 
 #[derive(clap::Parser, Debug)]
 #[clap(author, version, about)]
@@ -32,10 +35,38 @@ struct AnalyzeArgs {
     output_dir: PathBuf,
 }
 
+struct ProgressBarCallback {
+    pbar: ProgressBar,
+}
+
+impl ProgressBarCallback {
+    fn new() -> Self {
+        Self {
+            pbar: ProgressBar::new(1),
+        }
+    }
+}
+
+impl LoadCallback for ProgressBarCallback {
+    fn start(&self, count: u64) {
+        self.pbar.set_length(count);
+    }
+
+    fn advance(&self) {
+        self.pbar.inc(1);
+    }
+
+    fn finish(&self) {
+        self.pbar.finish_using_style();
+    }
+}
+
 fn command_analyze(args: AnalyzeArgs) -> anyhow::Result<()> {
-    let remarks = load_remarks_from_dir(args.remark_dir)?;
-    let index = RemarkIndex::new(remarks);
-    render_index(index, &args.output_dir)?;
+    let remarks = time_block_print("Remark loading", || {
+        load_remarks_from_dir(args.remark_dir, Some(&ProgressBarCallback::new()))
+    })?;
+    let index = time_block_print("Index load", || RemarkIndex::new(remarks));
+    time_block_print("Render", || render_remarks(index, &args.output_dir))?;
     Ok(())
 }
 

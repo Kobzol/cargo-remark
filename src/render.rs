@@ -23,7 +23,7 @@ pub struct IndexTemplate<'a> {
     remarks: &'a [RemarkEntry<'a>],
 }
 
-pub fn render_index(index: RemarkIndex, output_dir: &Path) -> anyhow::Result<()> {
+pub fn render_remarks(index: RemarkIndex, output_dir: &Path) -> anyhow::Result<()> {
     let _ = std::fs::remove_dir_all(output_dir);
     std::fs::create_dir_all(output_dir).context("Cannot create output directory")?;
 

@@ -43,12 +43,12 @@ pub struct RemarkArgReason<'a> {
 #[derive(serde::Deserialize, Debug)]
 #[serde(untagged)]
 pub enum RemarkArg<'a> {
-    #[serde(borrow)]
     String(RemarkArgString<'a>),
     Callee(RemarkArgCallee<'a>),
     Caller(RemarkArgCaller<'a>),
     Reason(RemarkArgReason<'a>),
-    Other(Map<String, String>),
+    #[serde(borrow)]
+    Other(Map<Cow<'a, str>, serde_yaml::Value>),
 }
 
 #[derive(serde::Deserialize, Debug)]

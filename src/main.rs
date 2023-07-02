@@ -21,8 +21,17 @@ enum Args {
 
 #[derive(clap::Subcommand, Debug)]
 enum Subcommand {
+    /// Build Cargo crate with optimizations, generate optimization remarks and display a website
+    /// that analyzes the results.
+    Build(BuildArgs),
     /// Analyze a directory with LLVM remarks.
     Analyze(AnalyzeArgs),
+}
+
+#[derive(clap::Parser, Debug)]
+struct BuildArgs {
+    /// Additional arguments that will be passed to `cargo build`.
+    cargo_args: Vec<String>,
 }
 
 #[derive(clap::Parser, Debug)]
@@ -82,6 +91,11 @@ fn command_analyze(args: AnalyzeArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
+fn command_build(_args: BuildArgs) -> anyhow::Result<()> {
+    // TODO: waiting for `-Zremark-dir` to be merged...
+    Ok(())
+}
+
 fn main() -> anyhow::Result<()> {
     env_logger::Builder::from_env(Env::default().default_filter_or("cargo_remark=info")).init();
 
@@ -90,6 +104,7 @@ fn main() -> anyhow::Result<()> {
     match args {
         Args::Remark(args) => match args {
             Subcommand::Analyze(args) => command_analyze(args),
+            Subcommand::Build(args) => command_build(args),
         },
     }
 }

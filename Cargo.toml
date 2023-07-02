@@ -39,5 +39,9 @@ anyhow = "1"
 log = "0.4"
 env_logger = "0.10"
 
+# Templates
+askama = { version = "0.12", features = ["serde-json"] }
+rust-embed = "6.6"
+
 rustc-demangle = "0.1"
 rayon = "1.7"

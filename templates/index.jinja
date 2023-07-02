@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block title %}Optimization remarks{% endblock %}
+
+{% block head %}
+<script src="assets/js/jquery-3.5.1.min.js"></script>
+<script src="assets/js/jquery.dataTables.min.js"></script>
+<script src="assets/js/colResizable-1.6.min.js"></script>
+<link rel="stylesheet" type="text/css" href="assets/css/jquery.dataTables.min.css" />
+{% endblock %}
+
+{% block content %}
+<div>
+    <table id="remark-table" width="100%"></table>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script type="text/javascript">
+    const dataSet = {{ remarks|json|safe }};
+    $(document).ready(function() {
+        $("#remark-table").DataTable({
+            data: dataSet,
+                "lengthMenu": [[100, 500, -1], [100, 500, "All"]],
+                columns: [{ title: "Name", data: "name" }],
+
+        });
+        $("#remark-table").colResizable();
+    });
+</script>
+{% endblock %}

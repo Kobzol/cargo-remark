@@ -9,6 +9,7 @@ use crate::remark::parse::RemarkArg;
 use crate::utils::data_structures::Map;
 use crate::utils::timing::time_block;
 
+pub mod index;
 mod parse;
 
 /// We expect that the remark YAML files will have this extension.

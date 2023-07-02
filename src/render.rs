@@ -24,7 +24,7 @@ pub struct IndexTemplate<'a> {
 }
 
 pub fn render_index(index: RemarkIndex, output_dir: &Path) -> anyhow::Result<()> {
-    std::fs::remove_dir_all(output_dir).context("Cannot clear output directory")?;
+    let _ = std::fs::remove_dir_all(output_dir);
     std::fs::create_dir_all(output_dir).context("Cannot create output directory")?;
 
     // Create index page

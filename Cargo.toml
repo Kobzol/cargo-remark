@@ -43,5 +43,8 @@ env_logger = "0.10"
 askama = { version = "0.12", features = ["serde-json"] }
 rust-embed = "6.6"
 
+# CLI
+clap = { version = "4.3", features = ["derive"] }
+
 rustc-demangle = "0.1"
 rayon = "1.7"

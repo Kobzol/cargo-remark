@@ -13,7 +13,6 @@ use crate::remark::parse::{RemarkArg, RemarkArgCallee, RemarkArgCaller};
 use crate::utils::callback::LoadCallback;
 use crate::utils::timing::time_block_log;
 
-pub mod index;
 mod parse;
 
 /// We expect that the remark YAML files will have this extension.

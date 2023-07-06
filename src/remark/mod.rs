@@ -50,7 +50,15 @@ pub struct Remark {
     pub message: Vec<MessagePart>,
 }
 
-pub fn load_remarks_from_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<Remark>> {
+#[derive(Default)]
+pub struct RemarkLoadOptions {
+    pub external: bool,
+}
+
+pub fn load_remarks_from_file<P: AsRef<Path>>(
+    path: P,
+    options: &RemarkLoadOptions,
+) -> anyhow::Result<Vec<Remark>> {
     let path = path.as_ref();
 
     let file =
@@ -64,11 +72,11 @@ pub fn load_remarks_from_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<Rem
 
     let reader = BufReader::new(file);
 
-    let remarks = time_block_log_debug("Parsed remark file", || parse_remarks(reader));
+    let remarks = time_block_log_debug("Parsed remark file", || parse_remarks(reader, options));
     Ok(remarks)
 }
 
-fn parse_remarks<R: std::io::Read>(reader: R) -> Vec<Remark> {
+fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Vec<Remark> {
     let mut remarks = vec![];
     for document in serde_yaml::Deserializer::from_reader(reader) {
         match parse::Remark::deserialize(document) {
@@ -76,16 +84,22 @@ fn parse_remarks<R: std::io::Read>(reader: R) -> Vec<Remark> {
                 // TODO: optimize (intern)
                 match remark {
                     parse::Remark::Missed(remark) => {
-                        let remark = Remark {
-                            pass: remark.pass.to_string(),
-                            name: remark.name.to_string(),
-                            function: Function {
-                                name: demangle(&remark.function),
-                                location: remark.debug_loc.map(parse_debug_loc),
-                            },
-                            message: construct_message(remark.args),
-                        };
-                        remarks.push(remark);
+                        if let Some(location) = remark.debug_loc {
+                            if !options.external && location.file.starts_with('/') {
+                                continue;
+                            }
+
+                            let remark = Remark {
+                                pass: remark.pass.to_string(),
+                                name: remark.name.to_string(),
+                                function: Function {
+                                    name: demangle(&remark.function),
+                                    location: Some(parse_debug_loc(location)),
+                                },
+                                message: construct_message(remark.args),
+                            };
+                            remarks.push(remark);
+                        }
                     }
                     parse::Remark::Passed {} => {}
                     parse::Remark::Analysis {} => {}
@@ -174,6 +188,7 @@ fn construct_message(arguments: Vec<RemarkArg>) -> Vec<MessagePart> {
 
 pub fn load_remarks_from_dir<P: AsRef<Path>>(
     path: P,
+    options: RemarkLoadOptions,
     callback: Option<&(dyn LoadCallback + Send + Sync)>,
 ) -> anyhow::Result<Vec<Remark>> {
     let dir = path.as_ref().to_path_buf().canonicalize()?;
@@ -205,7 +220,7 @@ pub fn load_remarks_from_dir<P: AsRef<Path>>(
     let remarks: Vec<(PathBuf, anyhow::Result<Vec<Remark>>)> = files
         .into_par_iter()
         .map(|file| {
-            let remarks = load_remarks_from_file(&file);
+            let remarks = load_remarks_from_file(&file, &options);
             if let Some(callback) = callback {
                 callback.advance();
             }
@@ -256,7 +271,7 @@ fn demangle(function: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::remark::parse_remarks;
+    use crate::remark::{parse_remarks, Remark, RemarkLoadOptions};
 
     #[test]
     fn parse_single() {
@@ -272,7 +287,7 @@ Args:
   - String:          '  %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1)'
   - String:          ' (in function: __rust_alloc)'
 ..."#;
-        insta::assert_debug_snapshot!(parse_remarks(input.as_bytes()), @r#"
+        insta::assert_debug_snapshot!(parse(input), @r#"
         [
             Remark {
                 pass: "sdagisel",
@@ -325,7 +340,7 @@ Args:
     DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
   - String:          ' because its definition is unavailable'
 ..."#;
-        insta::assert_debug_snapshot!(parse_remarks(input.as_bytes()), @r###"
+        insta::assert_debug_snapshot!(parse(input), @r#"
         [
             Remark {
                 pass: "inline",
@@ -388,7 +403,7 @@ Args:
                 ],
             },
         ]
-        "###);
+        "#);
     }
 
     #[test]
@@ -403,7 +418,7 @@ Args:
   - String:          '  %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1)'
   - String:          ' (in function: __rust_alloc)'
 ..."#;
-        insta::assert_debug_snapshot!(parse_remarks(input.as_bytes()), @r#"
+        insta::assert_debug_snapshot!(parse(input), @r#"
         [
             Remark {
                 pass: "sdagisel",
@@ -468,7 +483,7 @@ Args:
   - String:          '; Delta: '
   - Delta:           '-6'
 ..."#;
-        assert!(parse_remarks(input.as_bytes()).is_empty());
+        assert!(parse(input).is_empty());
     }
 
     #[test]
@@ -489,6 +504,10 @@ Args:
                        Line: 404, Column: 19 }
 ..."#;
 
-        assert_eq!(parse_remarks(input.as_bytes()).len(), 1);
+        assert_eq!(parse(input).len(), 1);
+    }
+
+    fn parse(input: &str) -> Vec<Remark> {
+        parse_remarks(input.as_bytes(), &RemarkLoadOptions { external: true })
     }
 }

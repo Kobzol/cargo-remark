@@ -1,11 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-use cargo_remark::remark::load_remarks_from_dir;
-use cargo_remark::render::render_remarks;
-use cargo_remark::utils::callback::ProgressBarCallback;
 use cargo_remark::utils::io::ensure_directory;
-use cargo_remark::utils::timing::time_block_log_info;
 
 use crate::cargo::cli::cli_format_path;
 
@@ -14,6 +10,8 @@ pub mod version;
 
 pub struct BuildOutput {
     pub out_dir: PathBuf,
+    pub source_dir: PathBuf,
+    pub gen_dir: PathBuf,
 }
 
 pub fn build(cargo_args: Vec<String>) -> anyhow::Result<BuildOutput> {
@@ -54,23 +52,12 @@ pub fn build(cargo_args: Vec<String>) -> anyhow::Result<BuildOutput> {
 
     log::info!("Optimization remarks sucessfully generated");
 
-    let source_dir = &ctx.root_directory;
     let out_dir = ensure_directory(&remark_dir.join("out"))?;
-    let remarks = time_block_log_info("Remark loading", || {
-        load_remarks_from_dir(gen_dir, Some(&ProgressBarCallback::default()))
-    })?;
-    time_block_log_info("Rendering", || {
-        render_remarks(
-            remarks,
-            source_dir,
-            &out_dir,
-            Some(&ProgressBarCallback::default()),
-        )
-    })?;
-
-    log::info!("Website built into {}.", cli_format_path(&out_dir));
-
-    Ok(BuildOutput { out_dir })
+    Ok(BuildOutput {
+        out_dir,
+        source_dir: ctx.root_directory,
+        gen_dir,
+    })
 }
 
 fn set_cargo_env(command: &mut Command, flags: &str) {

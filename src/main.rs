@@ -3,7 +3,10 @@ mod cargo;
 use crate::cargo::build;
 use crate::cargo::cli::cli_format_path;
 use crate::cargo::version::check_remark_dir_support;
-use cargo_remark::render::INDEX_FILE_PATH;
+use cargo_remark::remark::{load_remarks_from_dir, RemarkLoadOptions};
+use cargo_remark::render::{render_remarks, INDEX_FILE_PATH};
+use cargo_remark::utils::callback::ProgressBarCallback;
+use cargo_remark::utils::timing::time_block_log_info;
 use clap::Parser;
 use env_logger::Env;
 
@@ -30,20 +33,50 @@ struct BuildArgs {
     #[arg(long)]
     open: bool,
 
+    /// Load remarks from external code (i.e. crat edependencies).
+    /// Note that this may produce a large amount of data!
+    #[arg(long)]
+    external: bool,
+
     /// Additional arguments that will be passed to `cargo build`.
     cargo_args: Vec<String>,
 }
 
 fn command_build(args: BuildArgs) -> anyhow::Result<()> {
+    let BuildArgs {
+        open,
+        external,
+        cargo_args,
+    } = args;
+
     if !check_remark_dir_support()? {
         return Err(anyhow::anyhow!(
             "Your version of rustc does not support `-Zremark-dir`. Please use a nightly version not older than 4. 7. 2023."
         ));
     }
-    let output = build(args.cargo_args)?;
+    let output = build(cargo_args)?;
+
+    let remarks = time_block_log_info("Remark loading", || {
+        load_remarks_from_dir(
+            output.gen_dir,
+            RemarkLoadOptions { external },
+            Some(&ProgressBarCallback::default()),
+        )
+    })?;
+    time_block_log_info("Rendering", || {
+        render_remarks(
+            remarks,
+            &output.source_dir,
+            &output.out_dir,
+            Some(&ProgressBarCallback::default()),
+        )
+    })?;
+
+    log::info!("Website built into {}.", cli_format_path(&output.out_dir));
+
     let index_path = output.out_dir.join(INDEX_FILE_PATH);
 
-    if args.open {
+    if open {
         opener::open_browser(&index_path).map_err(|error| {
             anyhow::anyhow!(
                 "Could not open {} in browser: {error:?}",

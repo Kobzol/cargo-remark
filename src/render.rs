@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
+use std::sync::Arc;
 
 use anyhow::Context;
 use askama::Template;
@@ -9,9 +10,9 @@ use rayon::iter::IntoParallelIterator;
 use rayon::prelude::*;
 use rust_embed::RustEmbed;
 
-use crate::remark::{Location, MessagePart, Remark};
+use crate::remark::{Line, Location, MessagePart, Remark};
 use crate::utils::callback::LoadCallback;
-use crate::utils::data_structures::Map;
+use crate::utils::data_structures::{Map, Set};
 
 #[derive(RustEmbed)]
 #[folder = "templates/assets"]
@@ -22,7 +23,15 @@ struct RemarkEntry<'a> {
     name: &'a str,
     location: Option<String>,
     function: &'a str,
-    message: String,
+    message: Arc<str>,
+}
+
+#[derive(serde::Serialize, PartialEq, Eq, Hash)]
+struct SourceRemark<'a> {
+    name: &'a str,
+    function: &'a str,
+    line: Line,
+    message: Arc<str>,
 }
 
 #[derive(Template)]
@@ -35,7 +44,7 @@ pub struct IndexTemplate<'a> {
 #[template(path = "source-file.jinja")]
 pub struct SourceFileTemplate<'a> {
     path: &'a str,
-    remarks: Vec<&'a RemarkEntry<'a>>,
+    remarks: Set<SourceRemark<'a>>,
     file_content: String,
 }
 
@@ -58,13 +67,13 @@ pub fn render_remarks(
         std::fs::write(path, data).context("Cannot copy asset file to output directory")?;
     }
 
-    let mut file_to_remarks: Map<&str, Vec<u32>> = Map::default();
+    let mut file_to_remarks: Map<&str, Set<SourceRemark>> = Map::default();
 
     // Create index page
     let remark_entries = remarks
         .iter()
-        .enumerate()
-        .map(|(index, r)| {
+        .map(|r| {
+            let message: Arc<str> = format_message(&r.message).into();
             let entry = RemarkEntry {
                 name: &r.name,
                 location: r
@@ -73,13 +82,18 @@ pub fn render_remarks(
                     .as_ref()
                     .map(|l| render_location(l, None)),
                 function: &r.function.name,
-                message: format_message(&r.message),
+                message: message.clone(),
             };
             if let Some(ref location) = r.function.location {
                 file_to_remarks
                     .entry(&location.file)
                     .or_default()
-                    .push(index.try_into().expect("Too many remarks per file"));
+                    .insert(SourceRemark {
+                        name: &r.name,
+                        function: &r.function.name,
+                        line: location.line,
+                        message,
+                    });
             }
             // We also need to create file mappings for all referenced files, not just for files
             // with a remark.
@@ -103,7 +117,7 @@ pub fn render_remarks(
     // Render all found source files
     file_to_remarks
         .into_par_iter()
-        .map(|(source_file, remark_indices)| -> anyhow::Result<()> {
+        .map(|(source_file, remarks)| -> anyhow::Result<()> {
             let original_path = resolve_path(source_dir, Path::new(source_file));
             let file_content = std::fs::read_to_string(&original_path)
                 .with_context(|| format!("Cannot read source file {}", original_path.display()))?;
@@ -113,14 +127,10 @@ pub fn render_remarks(
             }
 
             // TODO: deduplicate links to "self" (the same source file)
-            let file_remarks: Vec<_> = remark_indices
-                .into_iter()
-                .map(|index| &remark_entries[index as usize])
-                .collect();
             let output_path = output_dir.join(path_to_relative_url(source_file));
             let source_file_page = SourceFileTemplate {
                 path: source_file,
-                remarks: file_remarks,
+                remarks,
                 file_content,
             };
             render_to_file(&source_file_page, Path::new(&output_path))?;

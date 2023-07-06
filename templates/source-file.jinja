@@ -3,18 +3,97 @@
 {% block title %}File {{ path }}{% endblock %}
 
 {% block head %}
+{% call super() %}
+<link rel="stylesheet" type="text/css" href="assets/css/codemirror-5.65.13.min.css" />
+
+<script src="assets/js/codemirror-5.65.13.min.js"></script>
+<script src="assets/js/codemirror-5.65.13-simple.min.js"></script>
+<script src="assets/js/codemirror-5.65.13-rust.min.js"></script>
+
+<style type="text/css">
+.header {
+    margin: 10px;
+}
+.source-code {
+    width: 100%;
+    height: 100%;
+}
+.CodeMirror {
+    font-size: 14px;
+}
+.codemirror-highlighted {
+    background-color: rgba(255, 0, 0, 0.3);
+}
+.remark {
+    margin: 5px;
+    padding: 10px;
+    border: 2px solid black;
+    border-radius: 5px;
+    box-shadow: 2px 1px 0 0 black;
+    background: rgba(80, 80, 80, 0.1);
+}
+</style>
 {% endblock %}
 
 {% block content %}
 <div>
-    File: {{ path }}
-    Remarks: {{ remarks|json }}
-    <pre>{{ file_content }}</pre>
+    <div style="display: flex; margin-bottom: 10px;">
+        <button id="btn-back">← Back</button>
+        <h3 class="header">{{ path }}</h3>
+    </div>
+    <textarea class="source-code" id="content" readonly>{{ file_content }}</textarea>
 </div>
 
 {% endblock %}
 
 {% block script %}
 <script type="text/javascript">
+function navigateToHash() {
+    if (window.location.hash && window.location.hash.startsWith("#L")) {
+        const hash = window.location.hash.substring(2);
+        let line = Number.parseInt(hash);
+        if (!Number.isNaN(line)) {
+            line = Math.max(1, Math.min(editor.lineCount(), line)) - 1;
+            const from = {line, ch: 0};
+            editor.setCursor(from);
+            editor.scrollIntoView(from);
+
+            const lineLength = editor.getLine(line).length;
+            const to = {line, ch: lineLength};
+
+            editor.doc.getAllMarks().forEach(marker => marker.clear());
+            editor.markText(from, to, {className: "codemirror-highlighted"});
+        }
+    }
+}
+
+$("#btn-back").on("click", () => {
+    window.location = "index.html";
+});
+
+const remarks = {{ remarks|json|safe }};
+
+const editor = CodeMirror.fromTextArea(document.getElementById("content"), {
+    lineNumbers: true,
+    mode: "rust",
+    readOnly: true
+});
+editor.setSize("100%", "100%");
+editor.focus();
+
+for (const remark of remarks) {
+    const element = document.createElement("div");
+    element.innerHTML = remark.message;
+    editor.addLineWidget(remark.line - 1, element, {
+        className: "remark"
+    });
+}
+
+window.addEventListener("hashchange", () => {
+    navigateToHash();
+});
+
+navigateToHash();
+
 </script>
 {% endblock %}

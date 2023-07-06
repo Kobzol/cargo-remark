@@ -25,7 +25,7 @@ include = [
 
 [dependencies]
 # Serialization
-serde = { version = "1", features = ["derive"] }
+serde = { version = "1", features = ["derive", "rc"] }
 serde_yaml = "0.9"
 
 # Data structures

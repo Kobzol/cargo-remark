@@ -18,11 +18,14 @@ mod parse;
 /// We expect that the remark YAML files will have this extension.
 const EXPECTED_EXTENSION: &str = ".opt.yaml";
 
+pub type Line = u32;
+pub type Column = u32;
+
 #[derive(Debug)]
 pub struct Location {
     pub file: String,
-    pub line: u32,
-    pub column: u32,
+    pub line: Line,
+    pub column: Column,
 }
 
 #[derive(Debug)]

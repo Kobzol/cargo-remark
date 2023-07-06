@@ -39,7 +39,10 @@ fn analyze(args: Args) -> anyhow::Result<()> {
     let remarks = time_block_print("Remark loading", || {
         load_remarks_from_dir(
             remark_dir,
-            RemarkLoadOptions { external },
+            RemarkLoadOptions {
+                external,
+                source_dir: source_dir.clone(),
+            },
             Some(&ProgressBarCallback::default()),
         )
     })?;

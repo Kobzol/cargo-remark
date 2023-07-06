@@ -59,7 +59,10 @@ fn command_build(args: BuildArgs) -> anyhow::Result<()> {
     let remarks = time_block_log_info("Remark loading", || {
         load_remarks_from_dir(
             output.gen_dir,
-            RemarkLoadOptions { external },
+            RemarkLoadOptions {
+                external,
+                source_dir: output.source_dir.clone(),
+            },
             Some(&ProgressBarCallback::default()),
         )
     })?;

@@ -53,6 +53,7 @@ pub struct Remark {
 #[derive(Default)]
 pub struct RemarkLoadOptions {
     pub external: bool,
+    pub source_dir: PathBuf,
 }
 
 pub fn load_remarks_from_file<P: AsRef<Path>>(
@@ -85,8 +86,13 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ve
                 match remark {
                     parse::Remark::Missed(remark) => {
                         if let Some(location) = remark.debug_loc {
-                            if !options.external && location.file.starts_with('/') {
-                                continue;
+                            if !options.external {
+                                if location.file.starts_with('/') {
+                                    continue;
+                                }
+                                if !options.source_dir.join(location.file.as_ref()).is_file() {
+                                    continue;
+                                }
                             }
 
                             let remark = Remark {
@@ -272,6 +278,7 @@ fn demangle(function: &str) -> String {
 #[cfg(test)]
 mod tests {
     use crate::remark::{parse_remarks, Remark, RemarkLoadOptions};
+    use std::path::PathBuf;
 
     #[test]
     fn parse_single() {
@@ -508,6 +515,12 @@ Args:
     }
 
     fn parse(input: &str) -> Vec<Remark> {
-        parse_remarks(input.as_bytes(), &RemarkLoadOptions { external: true })
+        parse_remarks(
+            input.as_bytes(),
+            &RemarkLoadOptions {
+                external: true,
+                source_dir: PathBuf::from("/tmp"),
+            },
+        )
     }
 }

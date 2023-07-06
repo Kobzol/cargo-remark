@@ -27,6 +27,7 @@ include = [
 # Serialization
 serde = { version = "1", features = ["derive", "rc"] }
 serde_yaml = "0.9"
+serde_json = "1"
 
 # Data structures
 hashbrown = { version = "0.13", features = ["rayon", "serde"] }

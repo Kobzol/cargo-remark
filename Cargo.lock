@@ -206,6 +206,7 @@ dependencies = [
  "rust-embed",
  "rustc-demangle",
  "serde",
+ "serde_json",
  "serde_yaml",
  "tempfile",
 ]

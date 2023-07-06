@@ -38,8 +38,8 @@ struct SourceRemark<'a> {
 
 #[derive(Template)]
 #[template(path = "index.jinja")]
-pub struct IndexTemplate<'a> {
-    remarks: &'a [RemarkEntry<'a>],
+pub struct IndexTemplate {
+    remarks_json: String,
 }
 
 #[derive(Template)]
@@ -107,8 +107,10 @@ pub fn render_remarks(
             entry
         })
         .collect::<Vec<_>>();
+
+    let serialized_remarks = serde_json::to_string(&remark_entries)?;
     let index_page = IndexTemplate {
-        remarks: &remark_entries,
+        remarks_json: serialized_remarks,
     };
     render_to_file(&index_page, &output_dir.join(INDEX_FILE_PATH))?;
 

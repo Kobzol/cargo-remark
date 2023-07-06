@@ -17,7 +17,7 @@
 
 {% block script %}
 <script type="text/javascript">
-    const remarks = {{ remarks|json|safe }};
+    const remarks = {{ remarks_json|safe }};
     $(document).ready(function() {
         $("#remark-table").DataTable({
             data: remarks,

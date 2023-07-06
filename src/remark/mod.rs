@@ -325,13 +325,13 @@ Args:
     DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
   - String:          ' because its definition is unavailable'
 ..."#;
-        insta::assert_debug_snapshot!(parse_remarks(input.as_bytes()), @r#"
+        insta::assert_debug_snapshot!(parse_remarks(input.as_bytes()), @r###"
         [
             Remark {
                 pass: "inline",
                 name: "NoDefinition",
                 function: Function {
-                    name: "std::rt::lang_start::h9096f6f84fb08eb2",
+                    name: "std::rt::lang_start",
                     location: Some(
                         Location {
                             file: "/foo/rust/rust/library/std/src/rt.rs",
@@ -342,10 +342,10 @@ Args:
                 },
                 message: [
                     String(
-                        "_ZN3std2rt19lang_start_internal17had90330d479f72f8E will not be inlined into ",
+                        "std::rt::lang_start_internal will not be inlined into ",
                     ),
                     AnnotatedString {
-                        message: "_ZN3std2rt10lang_start17h9096f6f84fb08eb2E",
+                        message: "std::rt::lang_start",
                         location: Location {
                             file: "/foo/rust/rust/library/std/src/rt.rs",
                             line: 159,
@@ -361,7 +361,7 @@ Args:
                 pass: "inline",
                 name: "NoDefinition",
                 function: Function {
-                    name: "remarks::main::hc92ae132ef1efa8e",
+                    name: "remarks::main",
                     location: Some(
                         Location {
                             file: "src/main.rs",
@@ -372,10 +372,10 @@ Args:
                 },
                 message: [
                     String(
-                        "_ZN3std2io5stdio6_print17hdb04fec352560b87E will not be inlined into ",
+                        "std::io::stdio::_print will not be inlined into ",
                     ),
                     AnnotatedString {
-                        message: "_ZN7remarks4main17hc92ae132ef1efa8eE",
+                        message: "remarks::main",
                         location: Location {
                             file: "src/main.rs",
                             line: 6,
@@ -388,7 +388,7 @@ Args:
                 ],
             },
         ]
-        "#);
+        "###);
     }
 
     #[test]

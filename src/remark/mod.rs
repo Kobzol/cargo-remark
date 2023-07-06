@@ -3,9 +3,11 @@ use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 use anyhow::Context;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use regex::Regex;
 use serde::Deserialize;
 use serde_yaml::Value;
 
@@ -238,8 +240,18 @@ fn parse_debug_loc(location: parse::DebugLocation) -> Location {
     }
 }
 
+static HASH_REGEX: OnceLock<Regex> = OnceLock::new();
+
 fn demangle(function: &str) -> String {
-    rustc_demangle::demangle(function).to_string()
+    // Remove hash from the end of legacy dmangled named
+    let regex = HASH_REGEX.get_or_init(|| {
+        Regex::new(r#".*::[a-z0-9]{17}$"#).expect("Could not create regular expression")
+    });
+    let mut demangled = rustc_demangle::demangle(function).to_string();
+    if let Some(_) = regex.find(&demangled) {
+        demangled.drain(demangled.len() - 19..);
+    }
+    demangled
 }
 
 #[cfg(test)]

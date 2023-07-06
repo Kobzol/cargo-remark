@@ -48,6 +48,7 @@ clap = { version = "4.3", features = ["derive"] }
 indicatif = "0.17"
 
 rustc-demangle = "0.1"
+regex = "1.9"
 rayon = "1.7"
 
 [dev-dependencies]

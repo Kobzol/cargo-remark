@@ -14,6 +14,8 @@ use crate::remark::{Line, Location, MessagePart, Remark};
 use crate::utils::callback::LoadCallback;
 use crate::utils::data_structures::{Map, Set};
 
+pub const INDEX_FILE_PATH: &str = "index.html";
+
 #[derive(RustEmbed)]
 #[folder = "templates/assets"]
 struct StaticAssets;
@@ -108,7 +110,7 @@ pub fn render_remarks(
     let index_page = IndexTemplate {
         remarks: &remark_entries,
     };
-    render_to_file(&index_page, &output_dir.join("index.html"))?;
+    render_to_file(&index_page, &output_dir.join(INDEX_FILE_PATH))?;
 
     if let Some(callback) = callback {
         callback.start(file_to_remarks.len() as u64);

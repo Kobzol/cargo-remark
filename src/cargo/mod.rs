@@ -9,7 +9,7 @@ use cargo_remark::utils::timing::time_block_log_info;
 
 use crate::cargo::cli::cli_format_path;
 
-mod cli;
+pub mod cli;
 pub mod version;
 
 pub struct BuildOutput {

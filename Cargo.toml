@@ -47,6 +47,7 @@ rust-embed = "6.6"
 clap = { version = "4.3", features = ["derive"] }
 indicatif = "0.17"
 colored = "2.0.0"
+opener = "0.6"
 
 rustc-demangle = "0.1"
 regex = "1.9"

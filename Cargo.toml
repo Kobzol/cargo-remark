@@ -2,7 +2,7 @@
 name = "cargo-remark"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.72.0"
+#rust-version = "1.72.0"
 
 description = "Cargo subcommand for displaying LLVM optimization remarks from compiling Rust programs."
 repository = "https://github.com/kobzol/cargo-remark"
@@ -46,10 +46,12 @@ rust-embed = "6.6"
 # CLI
 clap = { version = "4.3", features = ["derive"] }
 indicatif = "0.17"
+colored = "2.0.0"
 
 rustc-demangle = "0.1"
 regex = "1.9"
 rayon = "1.7"
+cargo_metadata = "0.15"
 
 [dev-dependencies]
 insta = "1.29"

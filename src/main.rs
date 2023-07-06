@@ -1,3 +1,7 @@
+mod cargo;
+
+use crate::cargo::build;
+use crate::cargo::version::check_remark_dir_support;
 use clap::Parser;
 use env_logger::Env;
 
@@ -24,8 +28,14 @@ struct BuildArgs {
     cargo_args: Vec<String>,
 }
 
-fn command_build(_args: BuildArgs) -> anyhow::Result<()> {
-    // TODO: waiting for `-Zremark-dir` to be merged...
+fn command_build(args: BuildArgs) -> anyhow::Result<()> {
+    if !check_remark_dir_support()? {
+        return Err(anyhow::anyhow!(
+            "Your version of rustc does not support `-Zremark-dir`. Please use a nightly version not older than 4. 7. 2023."
+        ));
+    }
+    let output = build(args.cargo_args)?;
+
     Ok(())
 }
 

@@ -25,14 +25,14 @@ struct Args {
 
 fn analyze(args: Args) -> anyhow::Result<()> {
     let remarks = time_block_print("Remark loading", || {
-        load_remarks_from_dir(args.remark_dir, Some(&ProgressBarCallback::new()))
+        load_remarks_from_dir(args.remark_dir, Some(&ProgressBarCallback::default()))
     })?;
     time_block_print("Render", || {
         render_remarks(
             remarks,
             &args.source_dir,
             &args.output_dir,
-            Some(&ProgressBarCallback::new()),
+            Some(&ProgressBarCallback::default()),
         )
     })?;
     Ok(())

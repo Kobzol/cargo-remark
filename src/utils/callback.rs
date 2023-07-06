@@ -10,8 +10,8 @@ pub struct ProgressBarCallback {
     pbar: ProgressBar,
 }
 
-impl ProgressBarCallback {
-    pub fn new() -> Self {
+impl Default for ProgressBarCallback {
+    fn default() -> Self {
         Self {
             pbar: ProgressBar::new(1),
         }

@@ -13,7 +13,7 @@ use serde_yaml::Value;
 
 use crate::remark::parse::{RemarkArg, RemarkArgCallee, RemarkArgCaller};
 use crate::utils::callback::LoadCallback;
-use crate::utils::timing::time_block_log;
+use crate::utils::timing::time_block_log_debug;
 
 mod parse;
 
@@ -64,7 +64,7 @@ pub fn load_remarks_from_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<Rem
 
     let reader = BufReader::new(file);
 
-    let remarks = time_block_log("Parsed remark file", || parse_remarks(reader));
+    let remarks = time_block_log_debug("Parsed remark file", || parse_remarks(reader));
     Ok(remarks)
 }
 
@@ -248,7 +248,7 @@ fn demangle(function: &str) -> String {
         Regex::new(r#".*::[a-z0-9]{17}$"#).expect("Could not create regular expression")
     });
     let mut demangled = rustc_demangle::demangle(function).to_string();
-    if let Some(_) = regex.find(&demangled) {
+    if regex.find(&demangled).is_some() {
         demangled.drain(demangled.len() - 19..);
     }
     demangled
@@ -272,7 +272,7 @@ Args:
   - String:          '  %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1)'
   - String:          ' (in function: __rust_alloc)'
 ..."#;
-        insta::assert_debug_snapshot!(parse_remarks(input.as_bytes()), @r###"
+        insta::assert_debug_snapshot!(parse_remarks(input.as_bytes()), @r#"
         [
             Remark {
                 pass: "sdagisel",
@@ -294,7 +294,7 @@ Args:
                 ],
             },
         ]
-        "###);
+        "#);
     }
 
     #[test]
@@ -325,7 +325,7 @@ Args:
     DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
   - String:          ' because its definition is unavailable'
 ..."#;
-        insta::assert_debug_snapshot!(parse_remarks(input.as_bytes()), @r###"
+        insta::assert_debug_snapshot!(parse_remarks(input.as_bytes()), @r#"
         [
             Remark {
                 pass: "inline",
@@ -388,7 +388,7 @@ Args:
                 ],
             },
         ]
-        "###);
+        "#);
     }
 
     #[test]
@@ -403,7 +403,7 @@ Args:
   - String:          '  %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1)'
   - String:          ' (in function: __rust_alloc)'
 ..."#;
-        insta::assert_debug_snapshot!(parse_remarks(input.as_bytes()), @r###"
+        insta::assert_debug_snapshot!(parse_remarks(input.as_bytes()), @r#"
         [
             Remark {
                 pass: "sdagisel",
@@ -419,7 +419,7 @@ Args:
                 ],
             },
         ]
-        "###);
+        "#);
     }
 
     #[test]

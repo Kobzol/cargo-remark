@@ -20,6 +20,24 @@ pub fn cargo_remark(dir: &Path, args: &[&str]) -> anyhow::Result<Output> {
     Ok(child.wait_with_output()?)
 }
 
+pub fn analyze_remarks(dir: &Path, args: &[&str]) -> anyhow::Result<Output> {
+    let mut command = Command::new("analyze-remarks");
+    for arg in args {
+        command.arg(arg);
+    }
+    command.current_dir(dir);
+    command.stdin(Stdio::null());
+    command.stdout(Stdio::piped());
+
+    let path = std::env::var("PATH").unwrap_or_default();
+    let path = format!("{}:{}", get_target_dir().display(), path);
+
+    command.env("PATH", path);
+
+    let child = command.spawn()?;
+    Ok(child.wait_with_output()?)
+}
+
 pub trait OutputExt {
     fn assert_ok(self) -> Self;
     fn assert_error(self) -> Self;

@@ -10,6 +10,10 @@ use cargo_remark::utils::timing::time_block_log_info;
 use clap::Parser;
 use env_logger::Env;
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 #[derive(clap::Parser, Debug)]
 #[clap(author, version, about)]
 #[clap(bin_name("cargo"))]

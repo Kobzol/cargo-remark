@@ -6,6 +6,10 @@ use clap::Parser;
 use env_logger::Env;
 use std::path::PathBuf;
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 /// Analyze a directory containing YAML files with LLVM optimization remarks
 #[derive(clap::Parser, Debug)]
 struct Args {

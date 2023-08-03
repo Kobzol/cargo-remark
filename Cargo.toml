@@ -56,6 +56,11 @@ regex = "1.9"
 rayon = "1.7"
 cargo_metadata = "0.15"
 
+mimalloc = { version = "0.1", default-features = false, optional = true }
+
 [dev-dependencies]
 insta = "1.29"
 tempfile = "3.5"
+
+[features]
+default = ["mimalloc"]

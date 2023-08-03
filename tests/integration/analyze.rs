@@ -1,4 +1,4 @@
-use crate::utils::{analyze_remarks, get_test_data_path, OutputDir, OutputExt};
+use crate::utils::{analyze_remarks, get_test_data_path, HTMLDir, OutputExt};
 
 #[test]
 fn analyze_directory() -> anyhow::Result<()> {
@@ -14,7 +14,7 @@ fn analyze_directory() -> anyhow::Result<()> {
         ],
     )?
     .assert_ok();
-    let dir = OutputDir::new(&dir.path().join("foo"));
+    let dir = HTMLDir::new(&dir.path().join("foo"));
     dir.check_index();
 
     Ok(())

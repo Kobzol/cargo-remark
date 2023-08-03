@@ -23,7 +23,7 @@ const EXPECTED_EXTENSION: &str = ".opt.yaml";
 pub type Line = u32;
 pub type Column = u32;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Location {
     pub file: String,
     pub line: Line,

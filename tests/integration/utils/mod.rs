@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
+use tempfile::TempDir;
 
 pub fn cargo_remark(dir: &Path, args: &[&str]) -> anyhow::Result<Output> {
     let mut command = Command::new("cargo");
@@ -88,21 +89,11 @@ pub fn get_test_data_path<P: AsRef<Path>>(path: P) -> PathBuf {
         .join(path.as_ref())
 }
 
-pub fn get_dir_files(directory: &Path) -> anyhow::Result<Vec<PathBuf>> {
-    let mut files = vec![];
-
-    for entry in directory.read_dir()? {
-        files.push(entry?.path());
-    }
-
-    Ok(files)
-}
-
-pub struct OutputDir {
+pub struct HTMLDir {
     dir: PathBuf,
 }
 
-impl OutputDir {
+impl HTMLDir {
     pub fn new(dir: &Path) -> Self {
         Self {
             dir: dir.to_path_buf(),
@@ -120,9 +111,7 @@ impl OutputDir {
     }
 }
 
-/*
 pub struct CargoProject {
-    name: String,
     pub dir: PathBuf,
     _tempdir: TempDir,
 }
@@ -137,6 +126,18 @@ impl CargoProject {
         let path = self.path(path.as_ref());
         std::fs::write(path, code).expect("Could not write project file");
         self
+    }
+
+    pub fn remark_dir(&self) -> PathBuf {
+        self.path("target/remarks/gen")
+    }
+
+    pub fn default_out_dir(&self) -> HTMLDir {
+        self.out_dir(&self.path("target/remarks/out"))
+    }
+
+    fn out_dir(&self, path: &Path) -> HTMLDir {
+        HTMLDir::new(path)
     }
 }
 
@@ -155,7 +156,7 @@ pub fn init_cargo_project() -> anyhow::Result<CargoProject> {
 
     let name = "foo";
     let status = Command::new("cargo")
-        .args(&["new", "--bin", name])
+        .args(["new", "--bin", name])
         .current_dir(dir.path())
         .status()?;
     assert!(status.success());
@@ -165,17 +166,7 @@ pub fn init_cargo_project() -> anyhow::Result<CargoProject> {
     println!("Created Cargo project {} at {}", name, path.display());
 
     Ok(CargoProject {
-        name: name.to_string(),
         dir: path,
         _tempdir: dir,
     })
 }
-
-pub fn run_command<S: AsRef<OsStr>>(path: S) -> anyhow::Result<()> {
-    let status = Command::new(path).status()?;
-    match status.success() {
-        true => Ok(()),
-        false => Err(anyhow::anyhow!("Command failed")),
-    }
-}
-*/

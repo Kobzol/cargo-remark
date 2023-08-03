@@ -4,7 +4,9 @@ use std::process::Command;
 pub fn check_remark_dir_support() -> anyhow::Result<bool> {
     let output = Command::new("rustc").arg("-Z").arg("help").output()?;
     if !output.status.success() {
-        return Err(anyhow::anyhow!("Failed to execute rustc -Z help"));
+        return Err(anyhow::anyhow!(
+            "Failed to execute rustc -Z help. You must use a nightly compiler."
+        ));
     }
 
     let options = String::from_utf8_lossy(&output.stdout);

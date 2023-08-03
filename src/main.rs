@@ -51,7 +51,7 @@ fn command_build(args: BuildArgs) -> anyhow::Result<()> {
 
     if !check_remark_dir_support()? {
         return Err(anyhow::anyhow!(
-            "Your version of rustc does not support `-Zremark-dir`. Please use a nightly version not older than 4. 7. 2023."
+            "Your version of rustc does not support `-Zremark-dir`. Please use a nightly version newer than 4. 7. 2023."
         ));
     }
     let output = build(cargo_args)?;

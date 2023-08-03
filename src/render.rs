@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use askama::Template;
+use html_escape::encode_safe;
 use rayon::iter::IntoParallelIterator;
 use rayon::prelude::*;
 use rust_embed::RustEmbed;
@@ -24,7 +25,7 @@ struct StaticAssets;
 struct RemarkEntry<'a> {
     name: &'a str,
     location: Option<String>,
-    function: &'a str,
+    function: Cow<'a, str>,
     message: Arc<str>,
 }
 
@@ -83,7 +84,7 @@ pub fn render_remarks(
                     .location
                     .as_ref()
                     .map(|l| render_location(l, None)),
-                function: &r.function.name,
+                function: encode_safe(&r.function.name),
                 message: message.clone(),
             };
             if let Some(ref location) = r.function.location {
@@ -153,7 +154,7 @@ fn format_message(parts: &[MessagePart]) -> String {
     let mut buffer = String::with_capacity(32);
     for part in parts {
         match part {
-            MessagePart::String(string) => buffer.push_str(string),
+            MessagePart::String(string) => buffer.push_str(encode_safe(string).as_ref()),
             MessagePart::AnnotatedString { message, location } => {
                 buffer.push_str(&render_location(location, Some(message)))
             }
@@ -169,9 +170,10 @@ fn render_location(location: &Location, label: Option<&str>) -> String {
     });
 
     format!(
-        "<a href='{}#L{}'>{label}</a>",
+        "<a href='{}#L{}'>{}</a>",
         path_to_relative_url(&location.file),
-        location.line
+        location.line,
+        encode_safe(&label),
     )
 }
 

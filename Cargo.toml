@@ -43,6 +43,7 @@ env_logger = "0.10"
 # Templates
 askama = { version = "0.12", features = ["serde-json"] }
 rust-embed = "6.6"
+html-escape = "0.2"
 
 # CLI
 clap = { version = "4.3", features = ["derive"] }

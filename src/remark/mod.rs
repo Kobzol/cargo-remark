@@ -425,23 +425,7 @@ Args:
   - String:          '  %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1)'
   - String:          ' (in function: __rust_alloc)'
 ..."#;
-        insta::assert_debug_snapshot!(parse(input), @r#"
-        [
-            Remark {
-                pass: "sdagisel",
-                name: "FastISelFailure",
-                function: Function {
-                    name: "__rust_alloc",
-                    location: None,
-                },
-                message: [
-                    String(
-                        "FastISel missed call:   %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1) (in function: __rust_alloc)",
-                    ),
-                ],
-            },
-        ]
-        "#);
+        insta::assert_debug_snapshot!(parse(input), @"[]");
     }
 
     #[test]

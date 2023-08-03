@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt::Write;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
@@ -6,7 +7,7 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use askama::Template;
-use html_escape::encode_safe;
+use html_escape::{encode_safe, encode_safe_to_string};
 use rayon::iter::IntoParallelIterator;
 use rayon::prelude::*;
 use rust_embed::RustEmbed;
@@ -79,11 +80,11 @@ pub fn render_remarks(
             let message: Arc<str> = format_message(&r.message).into();
             let entry = RemarkEntry {
                 name: &r.name,
-                location: r
-                    .function
-                    .location
-                    .as_ref()
-                    .map(|l| render_location(l, None)),
+                location: r.function.location.as_ref().map(|l| {
+                    let mut buffer = String::new();
+                    render_location(&mut buffer, l, None);
+                    buffer
+                }),
                 function: encode_safe(&r.function.name),
                 message: message.clone(),
             };
@@ -132,7 +133,9 @@ pub fn render_remarks(
             }
 
             // TODO: deduplicate links to "self" (the same source file)
-            let output_path = output_dir.join(path_to_relative_url(source_file));
+            let mut buffer = String::new();
+            path_to_relative_url(&mut buffer, source_file);
+            let output_path = output_dir.join(buffer);
             let source_file_page = SourceFileTemplate {
                 path: source_file,
                 remarks,
@@ -154,31 +157,34 @@ fn format_message(parts: &[MessagePart]) -> String {
     let mut buffer = String::with_capacity(32);
     for part in parts {
         match part {
-            MessagePart::String(string) => buffer.push_str(encode_safe(string).as_ref()),
+            MessagePart::String(string) => {
+                encode_safe_to_string(string, &mut buffer);
+            }
             MessagePart::AnnotatedString { message, location } => {
-                buffer.push_str(&render_location(location, Some(message)))
+                render_location(&mut buffer, location, Some(message));
             }
         }
     }
     buffer
 }
 
-// TODO: remove allocation(s) by writing into a fmt buffer
-fn render_location(location: &Location, label: Option<&str>) -> String {
+fn render_location(buffer: &mut String, location: &Location, label: Option<&str>) {
+    buffer.push_str("<a href='");
+    path_to_relative_url(buffer, &location.file);
+    buffer.push_str("#L");
+    buffer.write_fmt(format_args!("{}", location.line)).unwrap();
+    buffer.push_str("'>");
+
     let label = label.map(Cow::from).unwrap_or_else(|| {
         format!("{}:{}:{}", location.file, location.line, location.column).into()
     });
+    encode_safe_to_string(label, buffer);
 
-    format!(
-        "<a href='{}#L{}'>{}</a>",
-        path_to_relative_url(&location.file),
-        location.line,
-        encode_safe(&label),
-    )
+    buffer.push_str("</a>");
 }
 
-fn path_to_relative_url(path: &str) -> String {
-    format!("{}.html", path.replace('/', "_"))
+fn path_to_relative_url(buffer: &mut String, path: &str) {
+    write!(buffer, "{}.html", path.replace('/', "_")).unwrap()
 }
 
 fn resolve_path<'a>(root_dir: &Path, path: &'a Path) -> Cow<'a, Path> {

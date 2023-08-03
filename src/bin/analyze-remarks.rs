@@ -26,7 +26,7 @@ struct Args {
     #[arg(long, default_value = "out")]
     output_dir: PathBuf,
 
-    /// Load remarks from external code (i.e. crat edependencies).
+    /// Load remarks from external code (i.e. crate dependencies).
     /// Note that this may produce a large amount of data!
     #[arg(long)]
     external: bool,

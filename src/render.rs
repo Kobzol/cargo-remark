@@ -184,7 +184,14 @@ fn render_location(buffer: &mut String, location: &Location, label: Option<&str>
 }
 
 fn path_to_relative_url(buffer: &mut String, path: &str) {
-    write!(buffer, "{}.html", path.replace('/', "_")).unwrap()
+    for ch in path.chars() {
+        if ch == '/' {
+            buffer.push('_');
+        } else {
+            buffer.push(ch);
+        }
+    }
+    buffer.push_str(".html");
 }
 
 fn resolve_path<'a>(root_dir: &Path, path: &'a Path) -> Cow<'a, Path> {

@@ -26,6 +26,13 @@ struct Args {
     /// Note that this may produce a large amount of data!
     #[arg(long)]
     external: bool,
+
+    /// Optimization remark kinds that should be ignored.
+    #[arg(
+        long = "filter",
+        default_values = cargo_remark::DEFAULT_KIND_FILTER
+    )]
+    filter_kind: Vec<String>,
 }
 
 fn analyze(args: Args) -> anyhow::Result<()> {
@@ -34,6 +41,7 @@ fn analyze(args: Args) -> anyhow::Result<()> {
         source_dir,
         output_dir,
         external,
+        filter_kind,
     } = args;
 
     let remarks = time_block_print("Remark loading", || {
@@ -42,6 +50,7 @@ fn analyze(args: Args) -> anyhow::Result<()> {
             RemarkLoadOptions {
                 external,
                 source_dir: source_dir.clone(),
+                filter_kind,
             },
             Some(&ProgressBarCallback::default()),
         )

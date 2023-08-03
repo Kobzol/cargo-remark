@@ -38,6 +38,13 @@ struct BuildArgs {
     #[arg(long)]
     external: bool,
 
+    /// Optimization remark kinds that should be ignored.
+    #[arg(
+        long = "filter",
+        default_values = cargo_remark::DEFAULT_KIND_FILTER
+    )]
+    filter_kind: Vec<String>,
+
     /// Additional arguments that will be passed to `cargo build`.
     cargo_args: Vec<String>,
 }
@@ -46,6 +53,7 @@ fn command_build(args: BuildArgs) -> anyhow::Result<()> {
     let BuildArgs {
         open,
         external,
+        filter_kind,
         cargo_args,
     } = args;
 
@@ -62,6 +70,7 @@ fn command_build(args: BuildArgs) -> anyhow::Result<()> {
             RemarkLoadOptions {
                 external,
                 source_dir: output.source_dir.clone(),
+                filter_kind,
             },
             Some(&ProgressBarCallback::default()),
         )

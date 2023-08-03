@@ -52,8 +52,12 @@ pub struct Remark {
 
 #[derive(Default)]
 pub struct RemarkLoadOptions {
+    /// Load remarks from external crates
     pub external: bool,
+    /// Source directory
     pub source_dir: PathBuf,
+    /// Remark kinds that should be ignored
+    pub filter_kind: Vec<String>,
 }
 
 pub fn load_remarks_from_file<P: AsRef<Path>>(
@@ -94,6 +98,13 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ve
                                     continue;
                                 }
                             }
+                            if options
+                                .filter_kind
+                                .iter()
+                                .any(|name| name == remark.name.as_ref())
+                            {
+                                continue;
+                            }
 
                             let remark = Remark {
                                 pass: remark.pass.to_string(),
@@ -107,8 +118,7 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ve
                             remarks.push(remark);
                         }
                     }
-                    parse::Remark::Passed {} => {}
-                    parse::Remark::Analysis {} => {}
+                    parse::Remark::Passed {} | parse::Remark::Analysis {} => {}
                 }
             }
             Err(error) => {
@@ -280,6 +290,44 @@ mod tests {
     use crate::remark::{parse_remarks, Remark, RemarkLoadOptions};
     use std::path::PathBuf;
 
+    struct Options {
+        external: bool,
+        filter_kind: Vec<String>,
+        source_dir: PathBuf,
+    }
+
+    impl Options {
+        fn filter(mut self, kind: &str) -> Self {
+            self.filter_kind.push(kind.to_string());
+            self
+        }
+    }
+
+    impl Default for Options {
+        fn default() -> Self {
+            Self {
+                external: true,
+                filter_kind: vec![],
+                source_dir: PathBuf::from("/tmp"),
+            }
+        }
+    }
+
+    impl From<Options> for RemarkLoadOptions {
+        fn from(value: Options) -> Self {
+            let Options {
+                external,
+                filter_kind,
+                source_dir,
+            } = value;
+            Self {
+                external,
+                source_dir,
+                filter_kind,
+            }
+        }
+    }
+
     #[test]
     fn parse_single() {
         let input = r#"--- !Missed
@@ -294,7 +342,7 @@ Args:
   - String:          '  %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1)'
   - String:          ' (in function: __rust_alloc)'
 ..."#;
-        insta::assert_debug_snapshot!(parse(input), @r#"
+        insta::assert_debug_snapshot!(parse(input, Options::default()), @r#"
         [
             Remark {
                 pass: "sdagisel",
@@ -347,7 +395,7 @@ Args:
     DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
   - String:          ' because its definition is unavailable'
 ..."#;
-        insta::assert_debug_snapshot!(parse(input), @r#"
+        insta::assert_debug_snapshot!(parse(input, Options::default()), @r#"
         [
             Remark {
                 pass: "inline",
@@ -425,7 +473,7 @@ Args:
   - String:          '  %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1)'
   - String:          ' (in function: __rust_alloc)'
 ..."#;
-        insta::assert_debug_snapshot!(parse(input), @"[]");
+        insta::assert_debug_snapshot!(parse(input, Options::default()), @"[]");
     }
 
     #[test]
@@ -474,7 +522,7 @@ Args:
   - String:          '; Delta: '
   - Delta:           '-6'
 ..."#;
-        assert!(parse(input).is_empty());
+        assert!(parse(input, Options::default()).is_empty());
     }
 
     #[test]
@@ -495,16 +543,31 @@ Args:
                        Line: 404, Column: 19 }
 ..."#;
 
-        assert_eq!(parse(input).len(), 1);
+        assert_eq!(parse(input, Options::default()).len(), 1);
     }
 
-    fn parse(input: &str) -> Vec<Remark> {
-        parse_remarks(
-            input.as_bytes(),
-            &RemarkLoadOptions {
-                external: true,
-                source_dir: PathBuf::from("/tmp"),
-            },
-        )
+    #[test]
+    fn parse_filter() {
+        let input = r#"--- !Missed
+Pass:            gvn
+Name:            Foo
+DebugLoc:        { File: '/projects/personal/rust/rust/library/core/src/result.rs', 
+                   Line: 1948, Column: 15 }
+Function:        '_ZN5alloc7raw_vec19RawVec$LT$T$C$A$GT$14grow_amortized17ha53db71e3f649c60E'
+Args:
+  - String:          'load of type '
+  - Type:            i64
+  - String:          ' not eliminated'
+  - String:          ' because it is clobbered by '
+  - ClobberedBy:     call
+    DebugLoc:        { File: '/projects/personal/rust/rust/library/alloc/src/raw_vec.rs', 
+                       Line: 404, Column: 19 }
+..."#;
+
+        assert!(parse(input, Options::default().filter("Foo")).is_empty());
+    }
+
+    fn parse(input: &str, opts: Options) -> Vec<Remark> {
+        parse_remarks(input.as_bytes(), &opts.into())
     }
 }

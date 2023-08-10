@@ -295,7 +295,7 @@ fn normalize_path(options: &RemarkLoadOptions, path: Cow<str>) -> String {
             if let Some(index) = path.find('/') {
                 let src_path = &path[index + 1..];
                 let src_path = rustc_source_root.0.join(src_path);
-                return src_path.to_str().unwrap().to_string();
+                return src_path.to_str().unwrap().to_string().replace('\\', "/");
             }
         }
     }

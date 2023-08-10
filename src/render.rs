@@ -28,6 +28,7 @@ struct RemarkEntry<'a> {
     location: Option<String>,
     function: Cow<'a, str>,
     message: Arc<str>,
+    hotness: Option<i32>,
 }
 
 #[derive(serde::Serialize, PartialEq, Eq, Hash)]
@@ -77,24 +78,33 @@ pub fn render_remarks(
     let remark_entries = remarks
         .iter()
         .map(|r| {
-            let message: Arc<str> = format_message(&r.message).into();
+            let Remark {
+                pass: _,
+                name,
+                function,
+                message,
+                hotness,
+            } = r;
+
+            let message: Arc<str> = format_message(message).into();
             let entry = RemarkEntry {
-                name: &r.name,
-                location: r.function.location.as_ref().map(|l| {
+                name,
+                location: function.location.as_ref().map(|l| {
                     let mut buffer = String::new();
                     render_location(&mut buffer, l, None);
                     buffer
                 }),
-                function: encode_safe(&r.function.name),
+                function: encode_safe(&function.name),
                 message: message.clone(),
+                hotness: *hotness,
             };
-            if let Some(ref location) = r.function.location {
+            if let Some(ref location) = function.location {
                 file_to_remarks
                     .entry(&location.file)
                     .or_default()
                     .insert(SourceRemark {
-                        name: &r.name,
-                        function: &r.function.name,
+                        name,
+                        function: &function.name,
                         line: location.line,
                         message,
                     });

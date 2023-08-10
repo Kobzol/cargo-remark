@@ -21,13 +21,15 @@
     $(document).ready(function() {
         $("#remark-table").DataTable({
             data: remarks,
-                "lengthMenu": [[100, 500, -1], [100, 500, "All"]],
-                columns: [
-                    {title: "Kind", data: "name"},
-                    {title: "Location", data: "location"},
-                    {title: "Function", data: "function"},
-                    {title: "Message", data: "message"},
-                ],
+            lengthMenu: [[100, 500, -1], [100, 500, "All"]],
+            columns: [
+                {title: "Kind", data: "name"},
+                {title: "Location", data: "location"},
+                {title: "Function", data: "function"},
+                {title: "Hotness", data: "hotness"},
+                {title: "Message", data: "message"},
+            ],
+            order: [[3, "desc"], [0, "asc"]]
         });
         $("#remark-table").colResizable();
     });

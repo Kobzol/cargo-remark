@@ -1,6 +1,6 @@
 use crate::utils::{cargo_remark, init_cargo_project, OutputExt};
 use cargo_remark::remark::{load_remarks_from_dir, Location, Remark, RemarkLoadOptions};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 const INLINE_NEVER_SOURCE: &str = r#"
 #[inline(never)]
@@ -48,15 +48,23 @@ fn test_generate_remarks() -> anyhow::Result<()> {
     assert_eq!(remark.pass, "inline");
     assert_eq!(remark.function.name, "foo::main");
     assert_eq!(
-        remark.function.location,
+        normalize_location(remark.function.location.as_ref()),
         Some(Location {
-            file: PathBuf::from("src/main.rs").display().to_string(),
+            file: "src/main.rs".to_string(),
             line: 6,
             column: 5
         })
     );
 
     Ok(())
+}
+
+fn normalize_location(location: Option<&Location>) -> Option<Location> {
+    location.map(|l| Location {
+        file: l.file.replace('\\', "/"),
+        line: l.line,
+        column: l.column,
+    })
 }
 
 fn load_remarks(path: &Path, filter: Vec<String>) -> Vec<Remark> {

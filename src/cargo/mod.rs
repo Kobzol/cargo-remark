@@ -16,20 +16,20 @@ pub enum CargoSubcommand {
 }
 
 pub struct BuildOutput {
-    pub out_dir: PathBuf,
+    pub web_dir: PathBuf,
     pub source_dir: PathBuf,
-    pub gen_dir: PathBuf,
+    pub yaml_dir: PathBuf,
 }
 
 pub fn run_cargo(subcmd: CargoSubcommand, cargo_args: Vec<String>) -> anyhow::Result<BuildOutput> {
     let ctx = get_cargo_ctx()?;
     let remark_dir = ctx.get_target_directory(Path::new("remarks"))?;
 
-    let gen_dir = ensure_directory(&remark_dir.join("gen"))?;
+    let yaml_dir = ensure_directory(&remark_dir.join("yaml"))?;
 
     log::info!(
         "Optimization remarks will be stored into {}.",
-        cli_format_path(&gen_dir)
+        cli_format_path(&yaml_dir)
     );
 
     let mut cmd = match subcmd {
@@ -56,7 +56,7 @@ pub fn run_cargo(subcmd: CargoSubcommand, cargo_args: Vec<String>) -> anyhow::Re
 
     let flags = format!(
         "-Cremark=all -Zremark-dir={} -Cdebuginfo=1",
-        gen_dir.display()
+        yaml_dir.display()
     );
     set_cargo_env(&mut cmd, &flags);
 
@@ -74,11 +74,11 @@ pub fn run_cargo(subcmd: CargoSubcommand, cargo_args: Vec<String>) -> anyhow::Re
 
     log::info!("Optimization remarks sucessfully generated");
 
-    let out_dir = ensure_directory(&remark_dir.join("out"))?;
+    let web_dir = ensure_directory(&remark_dir.join("web"))?;
     Ok(BuildOutput {
-        out_dir,
+        web_dir,
         source_dir: ctx.root_directory,
-        gen_dir,
+        yaml_dir,
     })
 }
 

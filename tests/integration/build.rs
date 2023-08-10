@@ -28,7 +28,7 @@ fn test_generate_remarks() -> anyhow::Result<()> {
 
     project.default_out_dir().check_index();
 
-    let remark_dir = project.path("target/remarks/gen");
+    let remark_dir = project.remark_dir();
     assert!(remark_dir.is_dir());
     let remarks = load_remarks_from_dir(
         &remark_dir,

@@ -129,11 +129,11 @@ impl CargoProject {
     }
 
     pub fn remark_dir(&self) -> PathBuf {
-        self.path("target/remarks/gen")
+        self.path("target/remarks/yaml")
     }
 
     pub fn default_out_dir(&self) -> HTMLDir {
-        self.out_dir(&self.path("target/remarks/out"))
+        self.out_dir(&self.path("target/remarks/web"))
     }
 
     fn out_dir(&self, path: &Path) -> HTMLDir {

@@ -80,7 +80,7 @@ fn generate_remarks(subcmd: CargoSubcommand, args: SharedArgs) -> anyhow::Result
 
     let remarks = time_block_log_info("Remark loading", || {
         load_remarks_from_dir(
-            output.gen_dir,
+            output.yaml_dir,
             RemarkLoadOptions {
                 external,
                 source_dir: output.source_dir.clone(),
@@ -94,14 +94,14 @@ fn generate_remarks(subcmd: CargoSubcommand, args: SharedArgs) -> anyhow::Result
         render_remarks(
             remarks,
             &output.source_dir,
-            &output.out_dir,
+            &output.web_dir,
             Some(&ProgressBarCallback::default()),
         )
     })?;
 
-    log::info!("Website built into {}.", cli_format_path(&output.out_dir));
+    log::info!("Website built into {}.", cli_format_path(&output.web_dir));
 
-    let index_path = output.out_dir.join(INDEX_FILE_PATH);
+    let index_path = output.web_dir.join(INDEX_FILE_PATH);
 
     if open {
         opener::open_browser(&index_path).map_err(|error| {

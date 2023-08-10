@@ -8,13 +8,18 @@ use crate::cargo::cli::cli_format_path;
 pub mod cli;
 pub mod version;
 
+pub enum CargoSubcommand {
+    Build,
+    Wrap,
+}
+
 pub struct BuildOutput {
     pub out_dir: PathBuf,
     pub source_dir: PathBuf,
     pub gen_dir: PathBuf,
 }
 
-pub fn build(cargo_args: Vec<String>) -> anyhow::Result<BuildOutput> {
+pub fn run_cargo(subcmd: CargoSubcommand, cargo_args: Vec<String>) -> anyhow::Result<BuildOutput> {
     let ctx = get_cargo_ctx()?;
     let remark_dir = ctx.get_target_directory(Path::new("remarks"))?;
 
@@ -25,20 +30,35 @@ pub fn build(cargo_args: Vec<String>) -> anyhow::Result<BuildOutput> {
         cli_format_path(&gen_dir)
     );
 
-    let cargo_args = parse_cargo_args(cargo_args);
+    let mut cmd = match subcmd {
+        CargoSubcommand::Build => {
+            let cargo_args = parse_cargo_args(cargo_args);
+            let mut cargo = Command::new("cargo");
+            cargo
+                .arg("build")
+                .arg("--release")
+                .stdin(Stdio::null())
+                .args(cargo_args.filtered);
+            cargo
+        }
+        CargoSubcommand::Wrap => {
+            if cargo_args.is_empty() {
+                return Err(anyhow::anyhow!("You have to enter a command after `--` that will be executed when using `wrap`."));
+            };
+
+            let mut cmd = Command::new("cargo");
+            cmd.args(&cargo_args).stdin(Stdio::null());
+            cmd
+        }
+    };
+
     let flags = format!(
         "-Cremark=all -Zremark-dir={} -Cdebuginfo=1",
         gen_dir.display()
     );
-    let mut cargo = Command::new("cargo");
-    cargo
-        .arg("build")
-        .arg("--release")
-        .stdin(Stdio::null())
-        .args(cargo_args.filtered);
-    set_cargo_env(&mut cargo, &flags);
+    set_cargo_env(&mut cmd, &flags);
 
-    let status = cargo
+    let status = cmd
         .spawn()
         .map_err(|error| anyhow::anyhow!("Cannot start cargo: {error:?}"))?
         .wait()

@@ -1,8 +1,8 @@
 mod cargo;
 
-use crate::cargo::build;
 use crate::cargo::cli::cli_format_path;
 use crate::cargo::version::check_remark_dir_support;
+use crate::cargo::{run_cargo, CargoSubcommand};
 use cargo_remark::remark::{load_remarks_from_dir, RemarkLoadOptions};
 use cargo_remark::render::{render_remarks, INDEX_FILE_PATH};
 use cargo_remark::utils::callback::ProgressBarCallback;
@@ -26,13 +26,16 @@ enum Args {
 
 #[derive(clap::Subcommand, Debug)]
 enum Subcommand {
-    /// Build a crate with optimizations, generate optimization remarks and display a website
+    /// Build a crate with optimizations, generate optimization remarks and render a website
     /// with remark summary.
-    Build(BuildArgs),
+    Build(SharedArgs),
+    /// Wrap an arbitrary cargo command, while configuring it to generate remarks.
+    Wrap(SharedArgs),
 }
 
 #[derive(clap::Parser, Debug)]
-struct BuildArgs {
+#[clap(trailing_var_arg = true)]
+struct SharedArgs {
     /// Open the generated website after the build finishes.
     #[arg(long)]
     open: bool,
@@ -49,12 +52,12 @@ struct BuildArgs {
     )]
     filter_kind: Vec<String>,
 
-    /// Additional arguments that will be passed to `cargo build`.
+    /// Additional arguments that will be passed to Cargo.
     cargo_args: Vec<String>,
 }
 
-fn command_build(args: BuildArgs) -> anyhow::Result<()> {
-    let BuildArgs {
+fn generate_remarks(subcmd: CargoSubcommand, args: SharedArgs) -> anyhow::Result<()> {
+    let SharedArgs {
         open,
         external,
         filter_kind,
@@ -66,7 +69,7 @@ fn command_build(args: BuildArgs) -> anyhow::Result<()> {
             "Your version of rustc does not support `-Zremark-dir`. Please use a nightly version newer than 4. 7. 2023."
         ));
     }
-    let output = build(cargo_args)?;
+    let output = run_cargo(subcmd, cargo_args)?;
 
     let remarks = time_block_log_info("Remark loading", || {
         load_remarks_from_dir(
@@ -116,7 +119,8 @@ fn main() -> anyhow::Result<()> {
 
     match args {
         Args::Remark(args) => match args {
-            Subcommand::Build(args) => command_build(args),
+            Subcommand::Build(args) => generate_remarks(CargoSubcommand::Build, args),
+            Subcommand::Wrap(args) => generate_remarks(CargoSubcommand::Wrap, args),
         },
     }
 }

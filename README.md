@@ -53,6 +53,11 @@ Currently, only missed optimization remarks will be visualized. `Analysis` and `
 | `--external` | (unset)                                         | Visualize remarks from external crates (dependencies) and stdlib. |
 | `--filter`   | `FastISelFailure,NeverInline,SpillReloadCopies` | Comma separated list of remark passes that should be ignored.     |
 
+### Features
+There is currently a single feature `mimalloc`, which is enabled by default, and which enables the use of the
+[mimalloc](https://docs.rs/mimalloc/latest/mimalloc/) allocator. To disable the feature, compile (or install) the crate
+with `--no-default-features`.
+
 ## Rendering remarks from a directory
 If you have a directory with YAML remarks on disk, and you just want to visualize them without invoking Cargo, you can
 use the `analyze-remarks` binary, which comes with this crate.

@@ -81,9 +81,27 @@ const editor = CodeMirror.fromTextArea(document.getElementById("content"), {
 editor.setSize("100%", "100%");
 editor.focus();
 
+// Sort by line and then in descending order by hotness
+remarks.sort((a, b) => {
+    if (a.line === b.line) {
+        const hotness_a = a.hotness || 0;
+        const hotness_b = b.hotness || 0;
+        return hotness_b - hotness_a;
+    } else if (a.line < b.line) {
+        return -1;
+    } else {
+        return 1;
+    }
+});
+
 for (const remark of remarks) {
     const element = document.createElement("div");
-    element.innerHTML = remark.message;
+    let message = remark.message;
+    if (remark.hotness !== null) {
+        message += ` (hotness: ${remark.hotness})`;
+    }
+
+    element.innerHTML = message;
     editor.addLineWidget(remark.line - 1, element, {
         className: "remark"
     });

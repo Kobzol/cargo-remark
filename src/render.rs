@@ -23,7 +23,7 @@ pub const INDEX_FILE_PATH: &str = "index.html";
 struct StaticAssets;
 
 #[derive(serde::Serialize)]
-struct RemarkEntry<'a> {
+struct RemarkIndexEntry<'a> {
     name: &'a str,
     location: Option<String>,
     function: Cow<'a, str>,
@@ -32,11 +32,12 @@ struct RemarkEntry<'a> {
 }
 
 #[derive(serde::Serialize, PartialEq, Eq, Hash)]
-struct SourceRemark<'a> {
+struct RemarkSourceEntry<'a> {
     name: &'a str,
     function: &'a str,
     line: Line,
     message: Arc<str>,
+    hotness: Option<i32>,
 }
 
 #[derive(Template)]
@@ -49,7 +50,7 @@ pub struct IndexTemplate {
 #[template(path = "source-file.jinja")]
 pub struct SourceFileTemplate<'a> {
     path: &'a str,
-    remarks: Set<SourceRemark<'a>>,
+    remarks: Set<RemarkSourceEntry<'a>>,
     file_content: String,
 }
 
@@ -72,7 +73,7 @@ pub fn render_remarks(
         std::fs::write(path, data).context("Cannot copy asset file to output directory")?;
     }
 
-    let mut file_to_remarks: Map<&str, Set<SourceRemark>> = Map::default();
+    let mut file_to_remarks: Map<&str, Set<RemarkSourceEntry>> = Map::default();
 
     // Create index page
     let remark_entries = remarks
@@ -87,7 +88,7 @@ pub fn render_remarks(
             } = r;
 
             let message: Arc<str> = format_message(message).into();
-            let entry = RemarkEntry {
+            let entry = RemarkIndexEntry {
                 name,
                 location: function.location.as_ref().map(|l| {
                     let mut buffer = String::new();
@@ -102,11 +103,12 @@ pub fn render_remarks(
                 file_to_remarks
                     .entry(&location.file)
                     .or_default()
-                    .insert(SourceRemark {
+                    .insert(RemarkSourceEntry {
                         name,
                         function: &function.name,
                         line: location.line,
                         message,
+                        hotness: *hotness,
                     });
             }
             // We also need to create file mappings for all referenced files, not just for files

@@ -10,7 +10,7 @@ generated during the compilation of your crate.**
 
 These remarks can tell you where and why has LLVM failed to apply certain optimizations. In certain cases[^1], you can use
 this knowledge to change your code so that it optimizes better. In the future, I hope that `rustc` will be able to emit
-its own, Rust-specific (MIR?) optimization remarks.
+its own, Rust-specific (MIR?) optimization remarks, but this is just an idea at this point.
 
 [^1]: Currently, probably only if you are a LLVM expert.
 
@@ -39,11 +39,11 @@ crate. To generate remarks from your crate, use the following command:
 $ cargo remark build
 ```
 
-This command will automatically build your crate with optimizations, so you don't have to pass the `--release` flag.
 After the build finishes, the remarks will be located in `target/remarks/yaml`, and the rendered website will be located
 in `target/remarks/web`. You can open the website by pointing your web browser to `target/remarks/web/index.html` file,
 or by using the `--open` flag.
 
+This command will automatically build your crate with optimizations, so you don't have to pass the `--release` flag.
 Currently, only missed optimization remarks will be visualized. `Analysis` and `Passed` remarks are ignored.
 
 ### CLI parameters
@@ -63,11 +63,11 @@ If you have a directory with YAML remarks on disk, and you just want to visualiz
 use the `analyze-remarks` binary, which comes with this crate.
 
 ```bash
-$ analyze-remarks <yaml-dir> [--source-dir <crate root>]
+$ analyze-remarks <yaml-dir> --source-dir <crate root>
 ```
 
-When you use this tool, you need to manually pass certain arguments that are normally inferred by Cargo, for example the
-root source directory from where the remarks were generated.
+When you use this tool, you need to manually pass the root source directory from where the remarks were generated
+(with `cargo remark`, it is automatically inferred).
 
 You could even use this binary to render remarks generated from C/C++ programs. One advantage of that is that `analyze-remarks`
 will probably be much faster than [existing](https://github.com/OfekShilon/optview2) C/C++ remark tools, which are written

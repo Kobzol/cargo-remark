@@ -5,9 +5,8 @@ use std::process::{Command, Stdio};
 
 use cargo_remark::utils::io::ensure_directory;
 
-use crate::cargo::cli::cli_format_path;
+use cargo_remark::utils::cli::cli_format_path;
 
-pub mod cli;
 pub mod version;
 
 pub enum CargoSubcommand {

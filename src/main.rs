@@ -1,11 +1,12 @@
 mod cargo;
 
-use cargo::cli::cli_format_path;
 use cargo::version::check_remark_dir_support;
 use cargo::{get_rustc_source_root, run_cargo, CargoSubcommand};
 use cargo_remark::remark::{load_remarks_from_dir, RemarkLoadOptions};
-use cargo_remark::render::{render_remarks, INDEX_FILE_PATH};
+use cargo_remark::render::render_remarks;
 use cargo_remark::utils::callback::ProgressBarCallback;
+use cargo_remark::utils::cli::cli_format_path;
+use cargo_remark::utils::open_result;
 use cargo_remark::utils::timing::time_block_log_info;
 use clap::Parser;
 use env_logger::Env;
@@ -101,22 +102,7 @@ fn generate_remarks(subcmd: CargoSubcommand, args: SharedArgs) -> anyhow::Result
 
     log::info!("Website built into {}.", cli_format_path(&output.web_dir));
 
-    let index_path = output.web_dir.join(INDEX_FILE_PATH);
-
-    if open {
-        opener::open_browser(&index_path).map_err(|error| {
-            anyhow::anyhow!(
-                "Could not open {} in browser: {error:?}",
-                cli_format_path(index_path)
-            )
-        })?;
-    } else {
-        log::info!(
-            "Open {} in a browser to see the results.",
-            cli_format_path(index_path)
-        );
-    }
-
+    open_result(&output.web_dir, open)?;
     Ok(())
 }
 

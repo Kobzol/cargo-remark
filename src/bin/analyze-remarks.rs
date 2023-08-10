@@ -1,6 +1,7 @@
 use cargo_remark::remark::{load_remarks_from_dir, RemarkLoadOptions};
 use cargo_remark::render::render_remarks;
 use cargo_remark::utils::callback::ProgressBarCallback;
+use cargo_remark::utils::open_result;
 use cargo_remark::utils::timing::time_block_print;
 use cargo_remark::RustcSourceRoot;
 use clap::Parser;
@@ -44,6 +45,10 @@ struct Args {
         default_values = cargo_remark::DEFAULT_KIND_FILTER
     )]
     filter_kind: Vec<String>,
+
+    /// Open the generated website after the build finishes.
+    #[arg(long)]
+    open: bool,
 }
 
 fn analyze(args: Args) -> anyhow::Result<()> {
@@ -54,6 +59,7 @@ fn analyze(args: Args) -> anyhow::Result<()> {
         external,
         sysroot,
         filter_kind,
+        open,
     } = args;
 
     let rustc_source_root = sysroot
@@ -79,6 +85,8 @@ fn analyze(args: Args) -> anyhow::Result<()> {
             Some(&ProgressBarCallback::default()),
         )
     })?;
+    open_result(&output_dir, open)?;
+
     Ok(())
 }
 

@@ -1,6 +1,6 @@
 use crate::utils::{cargo_remark, init_cargo_project, OutputExt};
 use cargo_remark::remark::{load_remarks_from_dir, Location, Remark, RemarkLoadOptions};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 const INLINE_NEVER_SOURCE: &str = r#"
 #[inline(never)]
@@ -50,7 +50,7 @@ fn test_generate_remarks() -> anyhow::Result<()> {
     assert_eq!(
         remark.function.location,
         Some(Location {
-            file: "src/main.rs".to_string(),
+            file: PathBuf::from("src/main.rs").display().to_string(),
             line: 6,
             column: 5
         })

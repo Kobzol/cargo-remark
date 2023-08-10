@@ -1,8 +1,8 @@
 mod cargo;
 
-use crate::cargo::cli::cli_format_path;
-use crate::cargo::version::check_remark_dir_support;
-use crate::cargo::{run_cargo, CargoSubcommand};
+use cargo::cli::cli_format_path;
+use cargo::version::check_remark_dir_support;
+use cargo::{get_rustc_source_root, run_cargo, CargoSubcommand};
 use cargo_remark::remark::{load_remarks_from_dir, RemarkLoadOptions};
 use cargo_remark::render::{render_remarks, INDEX_FILE_PATH};
 use cargo_remark::utils::callback::ProgressBarCallback;
@@ -63,13 +63,20 @@ fn generate_remarks(subcmd: CargoSubcommand, args: SharedArgs) -> anyhow::Result
         filter_kind,
         cargo_args,
     } = args;
-
     if !check_remark_dir_support()? {
         return Err(anyhow::anyhow!(
             "Your version of rustc does not support `-Zremark-dir`. Please use a nightly version newer than 4. 7. 2023."
         ));
     }
     let output = run_cargo(subcmd, cargo_args)?;
+
+    let rustc_source_root = match get_rustc_source_root() {
+        Ok(root) => Some(root),
+        Err(error) => {
+            log::warn!("Cannot find rustc source root: {error:?}");
+            None
+        }
+    };
 
     let remarks = time_block_log_info("Remark loading", || {
         load_remarks_from_dir(
@@ -78,6 +85,7 @@ fn generate_remarks(subcmd: CargoSubcommand, args: SharedArgs) -> anyhow::Result
                 external,
                 source_dir: output.source_dir.clone(),
                 filter_kind,
+                rustc_source_root,
             },
             Some(&ProgressBarCallback::default()),
         )

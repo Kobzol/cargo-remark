@@ -1,3 +1,5 @@
+use anyhow::Context;
+use cargo_remark::RustcSourceRoot;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -78,6 +80,16 @@ pub fn run_cargo(subcmd: CargoSubcommand, cargo_args: Vec<String>) -> anyhow::Re
         source_dir: ctx.root_directory,
         gen_dir,
     })
+}
+
+pub fn get_rustc_source_root() -> anyhow::Result<RustcSourceRoot> {
+    let output = Command::new("rustc")
+        .arg("--print")
+        .arg("sysroot")
+        .output()
+        .context("Cannot get sysroot from `rustc`")?;
+    let sysroot = PathBuf::from(String::from_utf8_lossy(&output.stdout).trim());
+    RustcSourceRoot::from_sysroot(sysroot)
 }
 
 fn set_cargo_env(command: &mut Command, flags: &str) {

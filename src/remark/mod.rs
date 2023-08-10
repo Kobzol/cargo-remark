@@ -14,6 +14,7 @@ use serde_yaml::Value;
 use crate::remark::parse::{MissedRemark, RemarkArg, RemarkArgCallee, RemarkArgCaller};
 use crate::utils::callback::LoadCallback;
 use crate::utils::timing::time_block_log_debug;
+use crate::RustcSourceRoot;
 
 mod parse;
 
@@ -59,6 +60,8 @@ pub struct RemarkLoadOptions {
     pub source_dir: PathBuf,
     /// Remark kinds that should be ignored
     pub filter_kind: Vec<String>,
+    /// Root path of rustc toolchain sources
+    pub rustc_source_root: Option<RustcSourceRoot>,
 }
 
 pub fn load_remarks_from_file<P: AsRef<Path>>(
@@ -121,9 +124,9 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ve
                                 name: name.to_string(),
                                 function: Function {
                                     name: demangle(&function),
-                                    location: Some(parse_debug_loc(location)),
+                                    location: Some(parse_debug_loc(options, location)),
                                 },
-                                message: construct_message(args),
+                                message: construct_message(options, args),
                                 hotness,
                             };
                             remarks.push(remark);
@@ -140,7 +143,7 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ve
     remarks
 }
 
-fn construct_message(arguments: Vec<RemarkArg>) -> Vec<MessagePart> {
+fn construct_message(opts: &RemarkLoadOptions, arguments: Vec<RemarkArg>) -> Vec<MessagePart> {
     let mut parts = vec![];
     let mut buffer = String::new();
 
@@ -172,7 +175,7 @@ fn construct_message(arguments: Vec<RemarkArg>) -> Vec<MessagePart> {
             }) => add_annotated(
                 MessagePart::AnnotatedString {
                     message: demangle(&function),
-                    location: parse_debug_loc(location),
+                    location: parse_debug_loc(opts, location),
                 },
                 &mut buffer,
                 &mut parts,
@@ -191,7 +194,7 @@ fn construct_message(arguments: Vec<RemarkArg>) -> Vec<MessagePart> {
                     .remove("DebugLoc")
                     .and_then(|l| parse::DebugLocation::deserialize(l).ok())
                 {
-                    let location = parse_debug_loc(location);
+                    let location = parse_debug_loc(opts, location);
                     let mut message = String::new();
                     aggregate_keys(&mut message, inner);
                     add_annotated(
@@ -274,12 +277,29 @@ pub fn load_remarks_from_dir<P: AsRef<Path>>(
     Ok(remarks)
 }
 
-fn parse_debug_loc(location: parse::DebugLocation) -> Location {
+fn parse_debug_loc(options: &RemarkLoadOptions, location: parse::DebugLocation) -> Location {
+    let file = normalize_path(options, location.file);
+
     Location {
-        file: location.file.into_owned(),
+        file,
         line: location.line,
         column: location.column,
     }
+}
+
+fn normalize_path(options: &RemarkLoadOptions, path: Cow<str>) -> String {
+    const RUSTC_PREFIX: &str = "/rustc/";
+
+    if let Some(ref rustc_source_root) = options.rustc_source_root {
+        if let Some(path) = path.strip_prefix(RUSTC_PREFIX) {
+            if let Some(index) = path.find('/') {
+                let src_path = &path[index + 1..];
+                let src_path = rustc_source_root.0.join(src_path);
+                return src_path.to_str().unwrap().to_string();
+            }
+        }
+    }
+    path.into_owned()
 }
 
 static HASH_REGEX: OnceLock<Regex> = OnceLock::new();
@@ -299,17 +319,29 @@ fn demangle(function: &str) -> String {
 #[cfg(test)]
 mod tests {
     use crate::remark::{parse_remarks, Remark, RemarkLoadOptions};
+    use crate::RustcSourceRoot;
     use std::path::PathBuf;
 
     struct Options {
         external: bool,
         filter_kind: Vec<String>,
         source_dir: PathBuf,
+        rustc_source_root: Option<PathBuf>,
     }
 
     impl Options {
         fn filter(mut self, kind: &str) -> Self {
             self.filter_kind.push(kind.to_string());
+            self
+        }
+
+        fn rustc_source_root(mut self, path: &str) -> Self {
+            self.rustc_source_root = Some(PathBuf::from(path));
+            self
+        }
+
+        fn external(mut self, external: bool) -> Self {
+            self.external = external;
             self
         }
     }
@@ -320,6 +352,7 @@ mod tests {
                 external: true,
                 filter_kind: vec![],
                 source_dir: PathBuf::from("/tmp"),
+                rustc_source_root: None,
             }
         }
     }
@@ -330,11 +363,13 @@ mod tests {
                 external,
                 filter_kind,
                 source_dir,
+                rustc_source_root,
             } = value;
             Self {
                 external,
                 source_dir,
                 filter_kind,
+                rustc_source_root: rustc_source_root.map(RustcSourceRoot),
             }
         }
     }
@@ -625,6 +660,39 @@ Args:
                 hotness: Some(
                     2,
                 ),
+            },
+        ]
+        "###);
+    }
+
+    #[test]
+    fn parse_remap_rust_source() {
+        let input = r#"--- !Missed
+Pass:            regalloc
+Name:            LoopSpillReloadCopies
+DebugLoc:        { File: '/rustc/08d00b40aef2017fe6dba3ff7d6476efa0c10888/library/std/src/io/buffered/bufreader/buffer.rs', 
+                   Line: 114, Column: 13 }
+Function:        _ZN3std2io16append_to_string17hcf3f6e91099a64a2E
+Args:
+..."#;
+
+        insta::assert_debug_snapshot!(parse(input, Options::default().external(true).rustc_source_root("/foo/bar")), @r###"
+        [
+            Remark {
+                pass: "regalloc",
+                name: "LoopSpillReloadCopies",
+                function: Function {
+                    name: "std::io::append_to_string",
+                    location: Some(
+                        Location {
+                            file: "/foo/bar/library/std/src/io/buffered/bufreader/buffer.rs",
+                            line: 114,
+                            column: 13,
+                        },
+                    ),
+                },
+                message: [],
+                hotness: None,
             },
         ]
         "###);

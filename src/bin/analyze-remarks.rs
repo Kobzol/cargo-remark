@@ -2,6 +2,7 @@ use cargo_remark::remark::{load_remarks_from_dir, RemarkLoadOptions};
 use cargo_remark::render::render_remarks;
 use cargo_remark::utils::callback::ProgressBarCallback;
 use cargo_remark::utils::timing::time_block_print;
+use cargo_remark::RustcSourceRoot;
 use clap::Parser;
 use env_logger::Env;
 use std::path::PathBuf;
@@ -31,6 +32,12 @@ struct Args {
     #[arg(long)]
     external: bool,
 
+    /// Sysroot directory of Rust toolchain which generated the remarks.
+    /// Used to resolve standard library sources.
+    /// Can be found with `rustc --print=sysroot`.
+    #[arg(long)]
+    sysroot: Option<PathBuf>,
+
     /// Optimization remark kinds that should be ignored.
     #[arg(
         long = "filter",
@@ -45,8 +52,12 @@ fn analyze(args: Args) -> anyhow::Result<()> {
         source_dir,
         output_dir,
         external,
+        sysroot,
         filter_kind,
     } = args;
+
+    let rustc_source_root = sysroot
+        .map(|sysroot| RustcSourceRoot::from_sysroot(sysroot).expect("Cannot find Rust sources"));
 
     let remarks = time_block_print("Remark loading", || {
         load_remarks_from_dir(
@@ -55,6 +66,7 @@ fn analyze(args: Args) -> anyhow::Result<()> {
                 external,
                 source_dir: source_dir.clone(),
                 filter_kind,
+                rustc_source_root,
             },
             Some(&ProgressBarCallback::default()),
         )

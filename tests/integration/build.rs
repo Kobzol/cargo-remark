@@ -36,6 +36,7 @@ fn test_generate_remarks() -> anyhow::Result<()> {
             external: false,
             source_dir: project.dir.clone(),
             filter_kind: vec![],
+            rustc_source_root: None,
         },
         None,
     )?;
@@ -65,6 +66,7 @@ fn load_remarks(path: &Path, filter: Vec<String>) -> Vec<Remark> {
             external: false,
             source_dir: path.to_path_buf(),
             filter_kind: filter,
+            rustc_source_root: None,
         },
         None,
     )

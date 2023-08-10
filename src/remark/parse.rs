@@ -62,6 +62,7 @@ pub struct MissedRemark<'a> {
     #[serde(borrow)]
     pub function: Cow<'a, str>,
     pub args: Vec<RemarkArg<'a>>,
+    pub hotness: Option<i32>,
 }
 
 #[derive(serde::Deserialize, Debug)]

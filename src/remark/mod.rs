@@ -11,7 +11,7 @@ use regex::Regex;
 use serde::Deserialize;
 use serde_yaml::Value;
 
-use crate::remark::parse::{RemarkArg, RemarkArgCallee, RemarkArgCaller};
+use crate::remark::parse::{MissedRemark, RemarkArg, RemarkArgCallee, RemarkArgCaller};
 use crate::utils::callback::LoadCallback;
 use crate::utils::timing::time_block_log_debug;
 
@@ -48,6 +48,7 @@ pub struct Remark {
     pub name: String,
     pub function: Function,
     pub message: Vec<MessagePart>,
+    pub hotness: Option<i32>,
 }
 
 #[derive(Default)]
@@ -89,7 +90,16 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ve
                 // TODO: optimize (intern)
                 match remark {
                     parse::Remark::Missed(remark) => {
-                        if let Some(location) = remark.debug_loc {
+                        let MissedRemark {
+                            pass,
+                            name,
+                            debug_loc,
+                            function,
+                            args,
+                            hotness,
+                        } = remark;
+
+                        if let Some(location) = debug_loc {
                             if !options.external {
                                 if location.file.starts_with('/') {
                                     continue;
@@ -101,19 +111,20 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ve
                             if options
                                 .filter_kind
                                 .iter()
-                                .any(|name| name == remark.name.as_ref())
+                                .any(|filter| filter == name.as_ref())
                             {
                                 continue;
                             }
 
                             let remark = Remark {
-                                pass: remark.pass.to_string(),
-                                name: remark.name.to_string(),
+                                pass: pass.to_string(),
+                                name: name.to_string(),
                                 function: Function {
-                                    name: demangle(&remark.function),
+                                    name: demangle(&function),
                                     location: Some(parse_debug_loc(location)),
                                 },
-                                message: construct_message(remark.args),
+                                message: construct_message(args),
+                                hotness,
                             };
                             remarks.push(remark);
                         }
@@ -342,7 +353,7 @@ Args:
   - String:          '  %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1)'
   - String:          ' (in function: __rust_alloc)'
 ..."#;
-        insta::assert_debug_snapshot!(parse(input, Options::default()), @r#"
+        insta::assert_debug_snapshot!(parse(input, Options::default()), @r###"
         [
             Remark {
                 pass: "sdagisel",
@@ -362,9 +373,10 @@ Args:
                         "FastISel missed call:   %3 = tail call ptr @__rdl_alloc(i64 %0, i64 %1) (in function: __rust_alloc)",
                     ),
                 ],
+                hotness: None,
             },
         ]
-        "#);
+        "###);
     }
 
     #[test]
@@ -395,7 +407,7 @@ Args:
     DebugLoc:        { File: 'src/main.rs', Line: 6, Column: 0 }
   - String:          ' because its definition is unavailable'
 ..."#;
-        insta::assert_debug_snapshot!(parse(input, Options::default()), @r#"
+        insta::assert_debug_snapshot!(parse(input, Options::default()), @r###"
         [
             Remark {
                 pass: "inline",
@@ -426,6 +438,7 @@ Args:
                         " because its definition is unavailable",
                     ),
                 ],
+                hotness: None,
             },
             Remark {
                 pass: "inline",
@@ -456,9 +469,10 @@ Args:
                         " because its definition is unavailable",
                     ),
                 ],
+                hotness: None,
             },
         ]
-        "#);
+        "###);
     }
 
     #[test]
@@ -565,6 +579,55 @@ Args:
 ..."#;
 
         assert!(parse(input, Options::default().filter("Foo")).is_empty());
+    }
+
+    #[test]
+    fn parse_hotness() {
+        let input = r#"--- !Missed
+Pass:            regalloc
+Name:            LoopSpillReloadCopies
+DebugLoc:        { File: '/rustc/08d00b40aef2017fe6dba3ff7d6476efa0c10888/library/std/src/io/buffered/bufreader/buffer.rs', 
+                   Line: 114, Column: 13 }
+Function:        _ZN3std2io16append_to_string17hcf3f6e91099a64a2E
+Hotness:         2
+Args:
+  - NumReloads:      '3'
+  - String:          ' reloads '
+  - TotalReloadsCost: '4.607052e-10'
+  - String:          ' total reloads cost '
+  - NumVRCopies:     '2'
+  - String:          ' virtual registers copies '
+  - TotalCopiesCost: '5.000000e-01'
+  - String:          ' total copies cost '
+  - String:          generated in loop
+..."#;
+
+        insta::assert_debug_snapshot!(parse(input, Options::default()), @r###"
+        [
+            Remark {
+                pass: "regalloc",
+                name: "LoopSpillReloadCopies",
+                function: Function {
+                    name: "std::io::append_to_string",
+                    location: Some(
+                        Location {
+                            file: "/rustc/08d00b40aef2017fe6dba3ff7d6476efa0c10888/library/std/src/io/buffered/bufreader/buffer.rs",
+                            line: 114,
+                            column: 13,
+                        },
+                    ),
+                },
+                message: [
+                    String(
+                        "3 reloads 4.607052e-10 total reloads cost 2 virtual registers copies 5.000000e-01 total copies cost generated in loop",
+                    ),
+                ],
+                hotness: Some(
+                    2,
+                ),
+            },
+        ]
+        "###);
     }
 
     fn parse(input: &str, opts: Options) -> Vec<Remark> {

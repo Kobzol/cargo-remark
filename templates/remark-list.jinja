@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+
+{% block title %}Remark list{% endblock %}
+
+{% block head %}
+{% call super() %}
+<link rel="stylesheet" type="text/css" href="assets/css/jquery.dataTables.min.css" />
+<script src="assets/js/jquery-3.5.1.min.js"></script>
+<script src="assets/js/jquery.dataTables.min.js"></script>
+<script src="assets/js/colResizable-1.6.min.js"></script>
+{% endblock %}
+
+{% block content %}
+{% include "menu.html" %}
+<div>
+    <table id="remark-table" width="100%"></table>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script type="text/javascript">
+    const remarks = {{ remarks_json|safe }};
+    $(document).ready(function() {
+        $("#remark-table").DataTable({
+            data: remarks,
+            lengthMenu: [[100, 500, -1], [100, 500, "All"]],
+            autoWidth: false,
+            columns: [
+                {title: "Kind", data: "name", width: "10%"},
+                {title: "Location", data: "location", width: "25%"},
+                {title: "Function", data: "function", width: "20%"},
+                {title: "Hotness", data: "hotness", width: "5%"},
+                {title: "Message", data: "message", width: "35%"},
+            ],
+            order: [[3, "desc"], [0, "asc"]]
+        });
+        $("#remark-table").colResizable();
+    });
+</script>
+{% endblock %}

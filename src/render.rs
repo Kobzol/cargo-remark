@@ -17,6 +17,7 @@ use crate::utils::callback::LoadCallback;
 use crate::utils::data_structures::{Map, Set};
 
 pub const INDEX_FILE_PATH: &str = "index.html";
+const REMARK_LIST_FILE_PATH: &str = "remarks.html";
 
 /// Directory where sources will be stored.
 /// Relative to the output directory.
@@ -45,9 +46,22 @@ struct RemarkSourceEntry<'a> {
 }
 
 #[derive(Template)]
-#[template(path = "index.jinja")]
-pub struct IndexTemplate {
+#[template(path = "remark-list.jinja")]
+pub struct RemarkListTemplate {
     remarks_json: String,
+}
+
+#[derive(serde::Serialize)]
+struct SourceFileLink<'a> {
+    name: &'a str,
+    file: String,
+    remark_count: u64,
+}
+
+#[derive(Template)]
+#[template(path = "index.jinja")]
+pub struct IndexTemplate<'a> {
+    source_links: Vec<SourceFileLink<'a>>,
 }
 
 #[derive(Template)]
@@ -79,7 +93,7 @@ pub fn render_remarks(
 
     let mut file_to_remarks: Map<&str, Set<RemarkSourceEntry>> = Map::default();
 
-    // Create index page
+    // Create remark list page
     let remark_entries = remarks
         .iter()
         .map(|r| {
@@ -96,7 +110,7 @@ pub fn render_remarks(
                 name,
                 location: function.location.as_ref().map(|l| {
                     let mut buffer = String::new();
-                    render_location(&mut buffer, l, None);
+                    render_remark_link(&mut buffer, l, None);
                     buffer
                 }),
                 function: encode_safe(&function.name),
@@ -127,9 +141,29 @@ pub fn render_remarks(
         .collect::<Vec<_>>();
 
     let serialized_remarks = serde_json::to_string(&remark_entries)?;
-    let index_page = IndexTemplate {
+    let remark_list_page = RemarkListTemplate {
         remarks_json: serialized_remarks,
     };
+    render_to_file(&remark_list_page, &output_dir.join(REMARK_LIST_FILE_PATH))?;
+
+    let mut source_links: Vec<SourceFileLink> = file_to_remarks
+        .iter()
+        .filter(|(_, remarks)| !remarks.is_empty())
+        .map(|(name, remarks)| {
+            let mut file = String::new();
+            path_to_relative_url(&mut file, name);
+            SourceFileLink {
+                name,
+                file,
+                remark_count: remarks.len() as u64,
+            }
+        })
+        .collect();
+
+    // Sort by relative files first, then in descending order by remark count
+    source_links.sort_by_key(|link| (link.name.starts_with('/'), -(link.remark_count as i64)));
+
+    let index_page = IndexTemplate { source_links };
     render_to_file(&index_page, &output_dir.join(INDEX_FILE_PATH))?;
 
     if let Some(callback) = callback {
@@ -183,14 +217,14 @@ fn format_message(parts: &[MessagePart]) -> String {
                 encode_safe_to_string(string, &mut buffer);
             }
             MessagePart::AnnotatedString { message, location } => {
-                render_location(&mut buffer, location, Some(message));
+                render_remark_link(&mut buffer, location, Some(message));
             }
         }
     }
     buffer
 }
 
-fn render_location(buffer: &mut String, location: &Location, label: Option<&str>) {
+fn render_remark_link(buffer: &mut String, location: &Location, label: Option<&str>) {
     buffer.push_str("<a href='");
     path_to_relative_url(buffer, &location.file);
     buffer.push_str("#L");

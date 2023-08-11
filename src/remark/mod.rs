@@ -221,9 +221,13 @@ pub fn load_remarks_from_dir<P: AsRef<Path>>(
     options: RemarkLoadOptions,
     callback: Option<&(dyn LoadCallback + Send + Sync)>,
 ) -> anyhow::Result<Vec<Remark>> {
-    let dir = path.as_ref().to_path_buf().canonicalize()?;
+    let dir = path
+        .as_ref()
+        .to_path_buf()
+        .canonicalize()
+        .with_context(|| format!("Cannot find remark directory {}", path.as_ref().display()))?;
     let files: Vec<PathBuf> = std::fs::read_dir(&dir)
-        .with_context(|| format!("Could not read remark directory {}", dir.display()))?
+        .with_context(|| format!("Cannot read remark directory {}", dir.display()))?
         .filter_map(|entry| {
             let entry = entry.ok()?;
             if !entry.file_type().ok()?.is_file() {

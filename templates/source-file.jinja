@@ -4,11 +4,12 @@
 
 {% block head %}
 {% call super() %}
-<link rel="stylesheet" type="text/css" href="assets/css/codemirror-5.65.13.min.css" />
+<link rel="stylesheet" type="text/css" href="../assets/css/codemirror-5.65.13.min.css" />
 
-<script src="assets/js/codemirror-5.65.13.min.js"></script>
-<script src="assets/js/codemirror-5.65.13-simple.min.js"></script>
-<script src="assets/js/codemirror-5.65.13-rust.min.js"></script>
+<script src="../assets/js/jquery-3.5.1.min.js"></script>
+<script src="../assets/js/codemirror-5.65.13.min.js"></script>
+<script src="../assets/js/codemirror-5.65.13-simple.min.js"></script>
+<script src="../assets/js/codemirror-5.65.13-rust.min.js"></script>
 
 <style type="text/css">
 .header {
@@ -68,7 +69,7 @@ function navigateToHash() {
 }
 
 $("#btn-back").on("click", () => {
-    window.location = "index.html";
+    window.history.back();
 });
 
 const remarks = {{ remarks|json|safe }};

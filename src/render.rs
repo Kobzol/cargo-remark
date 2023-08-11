@@ -18,6 +18,10 @@ use crate::utils::data_structures::{Map, Set};
 
 pub const INDEX_FILE_PATH: &str = "index.html";
 
+/// Directory where sources will be stored.
+/// Relative to the output directory.
+const SRC_DIR_NAME: &str = "src";
+
 #[derive(RustEmbed)]
 #[folder = "templates/assets"]
 struct StaticAssets;
@@ -138,8 +142,7 @@ pub fn render_remarks(
         .map(|(source_file, remarks)| -> anyhow::Result<()> {
             let original_path = resolve_path(source_dir, Path::new(source_file));
             let file_content = std::fs::read_to_string(&original_path)
-                .with_context(|| format!("Cannot read source file {}", original_path.display()))
-                .with_context(|| anyhow::anyhow!("Failed to read {}", original_path.display()))?;
+                .with_context(|| format!("Cannot read source file {}", original_path.display()))?;
 
             if let Some(callback) = callback {
                 callback.advance();
@@ -160,8 +163,9 @@ pub fn render_remarks(
         })
         .collect::<Vec<anyhow::Result<()>>>();
 
-    for result in results {
-        result?;
+    let failed = results.into_iter().filter(|r| r.is_err()).count();
+    if failed > 0 {
+        log::warn!("Failed to write {failed} source file(s)");
     }
 
     if let Some(callback) = callback {
@@ -202,6 +206,8 @@ fn render_location(buffer: &mut String, location: &Location, label: Option<&str>
 }
 
 fn path_to_relative_url(buffer: &mut String, path: &str) {
+    buffer.push_str(SRC_DIR_NAME);
+    buffer.push('/');
     for ch in path.chars() {
         if ch == '/' {
             buffer.push('_');
@@ -221,6 +227,11 @@ fn resolve_path<'a>(root_dir: &Path, path: &'a Path) -> Cow<'a, Path> {
 }
 
 fn render_to_file<T: askama::Template>(template: &T, path: &Path) -> anyhow::Result<()> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .context("Cannot create directory for storing rendered file")?;
+    }
+
     let file = File::create(path)
         .with_context(|| format!("Cannot create template file {}", path.display()))?;
     let mut writer = BufWriter::new(file);

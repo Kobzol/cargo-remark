@@ -104,6 +104,10 @@ impl HTMLDir {
         self.check_exists("index.html");
     }
 
+    pub fn check_source(&self, file: &str) {
+        self.check_exists(Path::new("src").join(file));
+    }
+
     fn check_exists<P: AsRef<Path>>(&self, path: P) {
         let path = self.dir.join(path.as_ref());
         assert!(path.is_file());

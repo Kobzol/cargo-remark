@@ -133,12 +133,13 @@ pub fn render_remarks(
     }
 
     // Render all found source files
-    file_to_remarks
+    let results = file_to_remarks
         .into_par_iter()
         .map(|(source_file, remarks)| -> anyhow::Result<()> {
             let original_path = resolve_path(source_dir, Path::new(source_file));
             let file_content = std::fs::read_to_string(&original_path)
-                .with_context(|| format!("Cannot read source file {}", original_path.display()))?;
+                .with_context(|| format!("Cannot read source file {}", original_path.display()))
+                .with_context(|| anyhow::anyhow!("Failed to read {}", original_path.display()))?;
 
             if let Some(callback) = callback {
                 callback.advance();
@@ -153,10 +154,15 @@ pub fn render_remarks(
                 remarks,
                 file_content,
             };
-            render_to_file(&source_file_page, Path::new(&output_path))?;
+            render_to_file(&source_file_page, Path::new(&output_path))
+                .with_context(|| anyhow::anyhow!("Failed to render {source_file}"))?;
             Ok(())
         })
         .collect::<Vec<anyhow::Result<()>>>();
+
+    for result in results {
+        result?;
+    }
 
     if let Some(callback) = callback {
         callback.finish();

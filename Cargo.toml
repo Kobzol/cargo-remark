@@ -19,6 +19,7 @@ readme = "README.md"
 license = "MIT"
 include = [
     "src/**/*.rs",
+    "templates",
     "Cargo.toml",
     "README.md"
 ]

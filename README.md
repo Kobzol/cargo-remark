@@ -18,6 +18,8 @@ its own, Rust-specific (MIR?) optimization remarks, but this is just an idea at 
 It is parallelized, which is important for large programs, because there can be a lot of remarks and since they are in 
 YAML, their parsing is not very fast.
 
+**Contributions are welcome!**
+
 # Generated output example
 ![Screenshot of a set of visualized remarks on top of Rust source code](docs/remarks.png)
 

@@ -3,7 +3,6 @@ use std::fmt::Write;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
-use std::sync::Arc;
 
 use anyhow::Context;
 use askama::Template;
@@ -32,7 +31,7 @@ struct RemarkIndexEntry<'a> {
     name: &'a str,
     location: Option<String>,
     function: Cow<'a, str>,
-    message: Arc<str>,
+    message: String,
     hotness: Option<i32>,
 }
 
@@ -41,7 +40,7 @@ struct RemarkSourceEntry<'a> {
     name: &'a str,
     function: &'a str,
     line: Line,
-    message: Arc<str>,
+    message: String,
     hotness: Option<i32>,
 }
 
@@ -105,16 +104,15 @@ pub fn render_remarks(
                 hotness,
             } = r;
 
-            let message: Arc<str> = format_message(message).into();
             let entry = RemarkIndexEntry {
                 name,
-                location: function.location.as_ref().map(|l| {
+                location: function.location.as_ref().map(|location| {
                     let mut buffer = String::new();
-                    render_remark_link(&mut buffer, l, None);
+                    render_remark_link(&mut buffer, location, Some(SRC_DIR_NAME), None);
                     buffer
                 }),
                 function: encode_safe(&function.name),
-                message: message.clone(),
+                message: format_message(message, Some(SRC_DIR_NAME)),
                 hotness: *hotness,
             };
             if let Some(ref location) = function.location {
@@ -125,7 +123,8 @@ pub fn render_remarks(
                         name,
                         function: &function.name,
                         line: location.line,
-                        message,
+                        // Inside the file, the link should be relative to the src directory
+                        message: format_message(message, None),
                         hotness: *hotness,
                     });
             }
@@ -151,7 +150,7 @@ pub fn render_remarks(
         .filter(|(_, remarks)| !remarks.is_empty())
         .map(|(name, remarks)| {
             let mut file = String::new();
-            path_to_relative_url(&mut file, name);
+            path_to_relative_url(&mut file, Some(SRC_DIR_NAME), name);
             SourceFileLink {
                 name,
                 file,
@@ -184,7 +183,7 @@ pub fn render_remarks(
 
             // TODO: deduplicate links to "self" (the same source file)
             let mut buffer = String::new();
-            path_to_relative_url(&mut buffer, source_file);
+            path_to_relative_url(&mut buffer, Some(SRC_DIR_NAME), source_file);
             let output_path = output_dir.join(buffer);
             let source_file_page = SourceFileTemplate {
                 path: source_file,
@@ -209,7 +208,7 @@ pub fn render_remarks(
     Ok(())
 }
 
-fn format_message(parts: &[MessagePart]) -> String {
+fn format_message(parts: &[MessagePart], prefix: Option<&str>) -> String {
     let mut buffer = String::with_capacity(32);
     for part in parts {
         match part {
@@ -217,16 +216,21 @@ fn format_message(parts: &[MessagePart]) -> String {
                 encode_safe_to_string(string, &mut buffer);
             }
             MessagePart::AnnotatedString { message, location } => {
-                render_remark_link(&mut buffer, location, Some(message));
+                render_remark_link(&mut buffer, location, prefix, Some(message));
             }
         }
     }
     buffer
 }
 
-fn render_remark_link(buffer: &mut String, location: &Location, label: Option<&str>) {
+fn render_remark_link(
+    buffer: &mut String,
+    location: &Location,
+    prefix: Option<&str>,
+    label: Option<&str>,
+) {
     buffer.push_str("<a href='");
-    path_to_relative_url(buffer, &location.file);
+    path_to_relative_url(buffer, prefix, &location.file);
     buffer.push_str("#L");
     buffer.write_fmt(format_args!("{}", location.line)).unwrap();
     buffer.push_str("'>");
@@ -239,9 +243,11 @@ fn render_remark_link(buffer: &mut String, location: &Location, label: Option<&s
     buffer.push_str("</a>");
 }
 
-fn path_to_relative_url(buffer: &mut String, path: &str) {
-    buffer.push_str(SRC_DIR_NAME);
-    buffer.push('/');
+fn path_to_relative_url(buffer: &mut String, prefix: Option<&str>, path: &str) {
+    if let Some(prefix) = prefix {
+        buffer.push_str(prefix);
+        buffer.push('/');
+    }
     for ch in path.chars() {
         if ch == '/' {
             buffer.push('_');

@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::fmt::Write;
 use std::fs::File;
 use std::io::BufWriter;
-use std::path::Path;
+use std::path::{Path, MAIN_SEPARATOR};
 
 use anyhow::Context;
 use askama::Template;
@@ -246,10 +246,10 @@ fn render_remark_link(
 fn path_to_relative_url(buffer: &mut String, prefix: Option<&str>, path: &str) {
     if let Some(prefix) = prefix {
         buffer.push_str(prefix);
-        buffer.push('/');
+        buffer.push(MAIN_SEPARATOR);
     }
     for ch in path.chars() {
-        if ch == '/' {
+        if ch == '/' || ch == '\\' {
             buffer.push('_');
         } else {
             buffer.push(ch);

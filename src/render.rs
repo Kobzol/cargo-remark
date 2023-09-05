@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::fmt::Write;
 use std::fs::File;
 use std::io::BufWriter;
-use std::path::{Path, MAIN_SEPARATOR};
+use std::path::{Component, Path, Prefix, MAIN_SEPARATOR};
 
 use anyhow::Context;
 use askama::Template;
@@ -243,16 +243,35 @@ fn render_remark_link(
     buffer.push_str("</a>");
 }
 
+/// Transforms `path` into a (hopefully unique) relative path that is normalized.
+/// Slashes and path prefixes (e.g. C:) are removed from the paths and replaced with placeholders.
 fn path_to_relative_url(buffer: &mut String, prefix: Option<&str>, path: &str) {
     if let Some(prefix) = prefix {
         buffer.push_str(prefix);
         buffer.push(MAIN_SEPARATOR);
     }
-    for ch in path.chars() {
-        if ch == '/' || ch == '\\' {
+
+    let path = Path::new(path);
+    let mut first = true;
+    for component in path.components() {
+        if !first {
             buffer.push('_');
-        } else {
-            buffer.push(ch);
+        }
+        first = false;
+
+        match component {
+            Component::Prefix(prefix) => {
+                match prefix.kind() {
+                    Prefix::Disk(disk) => buffer.push(disk as char),
+                    _ => buffer.push_str("_prefix_"),
+                };
+                first = true;
+            }
+            Component::CurDir | Component::ParentDir => buffer.push('_'),
+            Component::Normal(component) => {
+                buffer.push_str(&component.to_string_lossy());
+            }
+            Component::RootDir => {}
         }
     }
     buffer.push_str(".html");
@@ -279,4 +298,31 @@ fn render_to_file<T: askama::Template>(template: &T, path: &Path) -> anyhow::Res
         .write_into(&mut writer)
         .with_context(|| format!("Cannot render template into {}", path.display()))?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::render::path_to_relative_url;
+
+    #[cfg(windows)]
+    #[test]
+    fn relative_path_c_prefix() {
+        check_path(r#"C:\foo\bar"#, "C_foo_bar.html");
+    }
+
+    #[test]
+    fn relative_path_absolute() {
+        check_path("/tmp/foo/bar", "_tmp_foo_bar.html");
+    }
+
+    #[test]
+    fn relative_path_relative() {
+        check_path("foo/bar", "foo_bar.html");
+    }
+
+    fn check_path(path: &str, expected: &str) {
+        let mut buffer = String::new();
+        path_to_relative_url(&mut buffer, None, path);
+        assert_eq!(buffer, expected);
+    }
 }

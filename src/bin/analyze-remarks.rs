@@ -42,6 +42,7 @@ struct Args {
     /// Optimization remark kinds that should be ignored.
     #[arg(
         long = "filter",
+        value_delimiter = ',',
         default_values = cargo_remark::DEFAULT_KIND_FILTER
     )]
     filter_kind: Vec<String>,

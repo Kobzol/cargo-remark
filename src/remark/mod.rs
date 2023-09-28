@@ -311,7 +311,7 @@ static HASH_REGEX: OnceLock<Regex> = OnceLock::new();
 fn demangle(function: &str) -> String {
     // Remove hash from the end of legacy dmangled named
     let regex = HASH_REGEX.get_or_init(|| {
-        Regex::new(r#".*::[a-z0-9]{17}$"#).expect("Could not create regular expression")
+        Regex::new(r".*::[a-z0-9]{17}$").expect("Could not create regular expression")
     });
     let mut demangled = rustc_demangle::demangle(function).to_string();
     if regex.find(&demangled).is_some() {

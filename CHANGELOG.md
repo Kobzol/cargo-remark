@@ -1,4 +1,4 @@
-# Dev
+# 0.1.2 (28. 9. 2023)
 ## Fixes:
 - Fix parsing of the `--filter` CLI parameter (https://github.com/Kobzol/cargo-remark/issues/11)
   (by [@joseluis](https://github.com/joseluis)).

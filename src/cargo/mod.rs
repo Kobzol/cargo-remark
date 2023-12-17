@@ -1,11 +1,11 @@
-use anyhow::Context;
-use cargo_remark::RustcSourceRoot;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-use cargo_remark::utils::io::ensure_directory;
+use anyhow::Context;
 
 use cargo_remark::utils::cli::cli_format_path;
+use cargo_remark::utils::io::ensure_directory;
+use cargo_remark::RustcSourceRoot;
 
 pub mod version;
 
@@ -53,8 +53,9 @@ pub fn run_cargo(subcmd: CargoSubcommand, cargo_args: Vec<String>) -> anyhow::Re
         }
     };
 
+    // Use CARGO_ENCODED_RUSTFLAGS to make sure that paths with spaces work.
     let flags = format!(
-        "-Cremark=all -Zremark-dir={} -Cdebuginfo=1",
+        "-Cremark=all\u{001f}-Zremark-dir={}\u{001f}-Cdebuginfo=1",
         yaml_dir.display()
     );
     set_cargo_env(&mut cmd, &flags);
@@ -92,12 +93,13 @@ pub fn get_rustc_source_root() -> anyhow::Result<RustcSourceRoot> {
 }
 
 fn set_cargo_env(command: &mut Command, flags: &str) {
-    use std::fmt::Write;
+    let mut rustflags = std::env::var("CARGO_ENCODED_RUSTFLAGS").unwrap_or_default();
+    if !rustflags.is_empty() {
+        rustflags.push('\u{001f}');
+    }
+    rustflags.push_str(flags);
 
-    let mut rustflags = std::env::var("RUSTFLAGS").unwrap_or_default();
-    write!(&mut rustflags, " {}", flags).unwrap();
-
-    command.env("RUSTFLAGS", rustflags);
+    command.env("CARGO_ENCODED_RUSTFLAGS", rustflags);
 }
 
 #[derive(Debug, Default)]

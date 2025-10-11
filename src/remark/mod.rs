@@ -1,11 +1,13 @@
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::fs::File;
+use std::hash::{Hash, Hasher};
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 use anyhow::Context;
+use hashbrown::HashSet;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use regex::Regex;
 use serde::Deserialize;
@@ -24,20 +26,20 @@ const EXPECTED_EXTENSION: &str = ".opt.yaml";
 pub type Line = u32;
 pub type Column = u32;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Location {
     pub file: String,
     pub line: Line,
     pub column: Column,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Function {
     pub name: String,
     pub location: Option<Location>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum MessagePart {
     String(String),
     AnnotatedString { message: String, location: Location },
@@ -51,6 +53,31 @@ pub struct Remark {
     pub message: Vec<MessagePart>,
     pub hotness: Option<i32>,
 }
+
+//Exclude function name from hash and equal
+//because it leads to multiple identical remarks in the rendered remarks with no visible difference
+impl Hash for Remark {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.pass.hash(state);
+        self.name.hash(state);
+
+        self.function.location.hash(state);
+
+        self.message.hash(state);
+        self.hotness.hash(state);
+    }
+}
+
+impl PartialEq for Remark {
+    fn eq(&self, other: &Self) -> bool {
+        self.pass == other.pass
+            && self.name == other.name
+            && self.function.location == other.function.location
+            && self.message == other.message
+            && self.hotness == other.hotness
+    }
+}
+impl Eq for Remark {}
 
 #[derive(Default)]
 pub struct RemarkLoadOptions {
@@ -67,7 +94,7 @@ pub struct RemarkLoadOptions {
 pub fn load_remarks_from_file<P: AsRef<Path>>(
     path: P,
     options: &RemarkLoadOptions,
-) -> anyhow::Result<Vec<Remark>> {
+) -> anyhow::Result<HashSet<Remark>> {
     let path = path.as_ref();
 
     let file =
@@ -76,7 +103,7 @@ pub fn load_remarks_from_file<P: AsRef<Path>>(
 
     if file.metadata()?.len() == 0 {
         log::debug!("File is empty");
-        return Ok(vec![]);
+        return Ok(HashSet::new());
     }
 
     let reader = BufReader::new(file);
@@ -85,8 +112,8 @@ pub fn load_remarks_from_file<P: AsRef<Path>>(
     Ok(remarks)
 }
 
-fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Vec<Remark> {
-    let mut remarks = vec![];
+fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> HashSet<Remark> {
+    let mut remarks = HashSet::new();
     for document in serde_yaml::Deserializer::from_reader(reader) {
         match parse::Remark::deserialize(document) {
             Ok(remark) => {
@@ -129,7 +156,7 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ve
                                 message: construct_message(options, args),
                                 hotness,
                             };
-                            remarks.push(remark);
+                            remarks.insert(remark);
                         }
                     }
                     parse::Remark::Passed {} | parse::Remark::Analysis {} => {}
@@ -251,7 +278,7 @@ pub fn load_remarks_from_dir<P: AsRef<Path>>(
         callback.start(files.len() as u64);
     }
 
-    let remarks: Vec<(PathBuf, anyhow::Result<Vec<Remark>>)> = files
+    let remarks: Vec<(PathBuf, anyhow::Result<HashSet<Remark>>)> = files
         .into_par_iter()
         .map(|file| {
             let remarks = load_remarks_from_file(&file, &options);
@@ -272,6 +299,8 @@ pub fn load_remarks_from_dir<P: AsRef<Path>>(
             }
         })
         .flatten()
+        .collect::<HashSet<Remark>>() // hashset in case different files share remarks, does remove some duplicate remarks
+        .into_iter()
         .collect();
 
     if let Some(callback) = callback {
@@ -324,6 +353,7 @@ fn demangle(function: &str) -> String {
 mod tests {
     use crate::remark::{parse_remarks, Remark, RemarkLoadOptions};
     use crate::RustcSourceRoot;
+    use hashbrown::HashSet;
     use std::path::PathBuf;
 
     struct Options {
@@ -702,7 +732,7 @@ Args:
         "###);
     }
 
-    fn parse(input: &str, opts: Options) -> Vec<Remark> {
+    fn parse(input: &str, opts: Options) -> HashSet<Remark> {
         parse_remarks(input.as_bytes(), &opts.into())
     }
 }

@@ -172,7 +172,7 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ha
                             hotness,
                         } = remark;
 
-                        // Only lool at loop vectorize analysis for now to find out possible reasons why loops didn't vectorize
+                        // Only look at loop vectorize analysis for now to find out possible reasons why loops didn't vectorize
                         if pass != "loop-vectorize" {
                             continue;
                         }
@@ -226,8 +226,8 @@ fn append_vectorization_analysis_to_remarks(
     remarks: HashSet<Remark>,
     analysis: HashSet<Remark>,
 ) -> HashSet<Remark> {
-    // gets the reason why loop wasn't vectorized from analysis remarks, then appends the analysis remarks
-    // to the missed vectorization remark
+    // gets the reason why loop wasn't vectorized from analysis remarks,
+    // then appends the analysis remarks to the missed vectorization remark
     // this does edit the original remark
     let mut remark_vec: Vec<Remark> = remarks.into_iter().collect();
 

@@ -13,7 +13,7 @@ use rust_embed::RustEmbed;
 
 use crate::remark::{Line, Location, MessagePart, Remark};
 use crate::utils::callback::LoadCallback;
-use crate::utils::data_structures::{Map, Set};
+use crate::utils::data_structures::Map;
 
 pub const INDEX_FILE_PATH: &str = "index.html";
 const REMARK_LIST_FILE_PATH: &str = "remarks.html";
@@ -67,7 +67,7 @@ pub struct IndexTemplate<'a> {
 #[template(path = "source-file.jinja")]
 pub struct SourceFileTemplate<'a> {
     path: &'a str,
-    remarks: Set<RemarkSourceEntry<'a>>,
+    remarks: Vec<RemarkSourceEntry<'a>>,
     file_content: String,
 }
 
@@ -90,7 +90,7 @@ pub fn render_remarks(
         std::fs::write(path, data).context("Cannot copy asset file to output directory")?;
     }
 
-    let mut file_to_remarks: Map<&str, Set<RemarkSourceEntry>> = Map::default();
+    let mut file_to_remarks: Map<&str, Vec<RemarkSourceEntry>> = Map::default();
 
     // Create remark list page
     let remark_entries = remarks
@@ -119,7 +119,7 @@ pub fn render_remarks(
                 file_to_remarks
                     .entry(&location.file)
                     .or_default()
-                    .insert(RemarkSourceEntry {
+                    .push(RemarkSourceEntry {
                         name,
                         function: &function.name,
                         line: location.line,
@@ -160,13 +160,18 @@ pub fn render_remarks(
         .collect();
 
     // Sort by relative files first, then in descending order by remark count
-    source_links.sort_by_key(|link| (link.name.starts_with('/'), -(link.remark_count as i64)));
+    source_links.par_sort_by_key(|link| (link.name.starts_with('/'), -(link.remark_count as i64)));
 
     let index_page = IndexTemplate { source_links };
     render_to_file(&index_page, &output_dir.join(INDEX_FILE_PATH))?;
 
     if let Some(callback) = callback {
         callback.start(file_to_remarks.len() as u64);
+    }
+
+    // sort the order of remarks in each file to make them more readable
+    for file in file_to_remarks.iter_mut() {
+        file.1.par_sort_by_key(|f| f.message.clone());
     }
 
     // Render all found source files

@@ -116,6 +116,7 @@ pub fn load_remarks_from_file<P: AsRef<Path>>(
 
 fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> HashSet<Remark> {
     let mut remarks = HashSet::new();
+    let mut analysis_remarks = HashSet::new();
     for document in serde_yaml::Deserializer::from_reader(reader) {
         match parse::Remark::deserialize(document) {
             Ok(remark) => {
@@ -204,7 +205,7 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ha
                                 message: construct_message(options, args),
                                 hotness,
                             };
-                            remarks.insert(remark);
+                            analysis_remarks.insert(remark);
                         }
                     }
 
@@ -216,7 +217,63 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ha
             }
         }
     }
+
+    remarks = append_vectorization_analysis_to_remarks(remarks, analysis_remarks);
     remarks
+}
+
+fn append_vectorization_analysis_to_remarks(
+    remarks: HashSet<Remark>,
+    analysis: HashSet<Remark>,
+) -> HashSet<Remark> {
+    // gets the reason why loop wasn't vectorized from analysis remarks, then appends the analysis remarks
+    // to the missed vectorization remark
+    // this does edit the original remark
+    let mut remark_vec: Vec<Remark> = remarks.into_iter().collect();
+
+    // get missed loop vectorizations
+    let missed_vectorization = remark_vec.iter_mut().filter(|remark| {
+        remark.pass == "loop-vectorize"
+            && remark.message.first()
+                == Some(&MessagePart::String("loop not vectorized".to_string()))
+    });
+
+    for missed_remark in missed_vectorization {
+        // Find analysis that points to the same function and location as the missed remark
+        // then collect the analysis reasons for the vectorization failure
+        let mut vectorize_miss_reasons: Vec<&str> = analysis
+            .iter()
+            .filter_map(|remark| {
+                // todo: if-let chain if in Rust 2024
+                if remark.function == missed_remark.function {
+                    if let Some(MessagePart::String(str)) = &remark.message.first() {
+                        let reason = str
+                            .strip_prefix("loop not vectorized: ")
+                            .expect("should start with 'loop not vectorized: '");
+                        Some(reason)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        vectorize_miss_reasons.sort(); // sort for consistency
+        vectorize_miss_reasons.dedup(); // dedup just in case
+
+        // append the analysis reasons to the original vectorization failure message
+        if let Some(MessagePart::String(message)) = missed_remark.message.first_mut() {
+            *message = format!(
+                "{message}\n\npossible reasons:\n{}",
+                vectorize_miss_reasons.join("\n")
+            )
+            .to_lowercase(); // remove inconsistent capitalization
+        }
+    }
+
+    remark_vec.into_iter().collect()
 }
 
 fn construct_message(opts: &RemarkLoadOptions, arguments: Vec<RemarkArg>) -> Vec<MessagePart> {

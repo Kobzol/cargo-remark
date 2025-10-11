@@ -214,7 +214,7 @@ pub fn render_remarks(
 }
 
 fn format_message(parts: &[MessagePart], prefix: Option<&str>) -> String {
-    let mut buffer = String::with_capacity(32);
+    let mut buffer = String::with_capacity(64);
     for part in parts {
         match part {
             MessagePart::String(string) => {
@@ -225,6 +225,7 @@ fn format_message(parts: &[MessagePart], prefix: Option<&str>) -> String {
             }
         }
     }
+    buffer = buffer.replace("\n", "<br>"); // keep new lines in the string
     buffer
 }
 

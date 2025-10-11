@@ -66,9 +66,23 @@ pub struct MissedRemark<'a> {
 }
 
 #[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "PascalCase")]
+pub struct AnalysisRemark<'a> {
+    #[serde(borrow)]
+    pub pass: Cow<'a, str>,
+    #[serde(borrow)]
+    pub name: Cow<'a, str>,
+    pub debug_loc: Option<DebugLocation<'a>>,
+    #[serde(borrow)]
+    pub function: Cow<'a, str>,
+    pub args: Vec<RemarkArg<'a>>,
+    pub hotness: Option<i32>,
+}
+
+#[derive(serde::Deserialize, Debug)]
 pub enum Remark<'a> {
     #[serde(borrow)]
     Missed(MissedRemark<'a>),
+    Analysis(AnalysisRemark<'a>),
     Passed {},
-    Analysis {},
 }

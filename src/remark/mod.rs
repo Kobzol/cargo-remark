@@ -13,7 +13,9 @@ use regex::Regex;
 use serde::Deserialize;
 use serde_yaml::Value;
 
-use crate::remark::parse::{MissedRemark, RemarkArg, RemarkArgCallee, RemarkArgCaller};
+use crate::remark::parse::{
+    AnalysisRemark, MissedRemark, RemarkArg, RemarkArgCallee, RemarkArgCaller,
+};
 use crate::utils::callback::LoadCallback;
 use crate::utils::timing::time_block_log_debug;
 use crate::RustcSourceRoot;
@@ -159,7 +161,54 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ha
                             remarks.insert(remark);
                         }
                     }
-                    parse::Remark::Passed {} | parse::Remark::Analysis {} => {}
+                    parse::Remark::Analysis(remark) => {
+                        let AnalysisRemark {
+                            pass,
+                            name,
+                            debug_loc,
+                            function,
+                            args,
+                            hotness,
+                        } = remark;
+
+                        // Only lool at loop vectorize analysis for now to find out possible reasons why loops didn't vectorize
+                        if pass != "loop-vectorize" {
+                            continue;
+                        }
+
+                        if let Some(location) = debug_loc {
+                            if !options.external {
+                                if location.file.starts_with('/') {
+                                    continue;
+                                }
+                                if !options.source_dir.join(location.file.as_ref()).is_file() {
+                                    continue;
+                                }
+                            }
+
+                            if options
+                                .filter_kind
+                                .iter()
+                                .any(|filter| filter == name.as_ref())
+                            {
+                                continue;
+                            }
+
+                            let remark = Remark {
+                                pass: pass.to_string(),
+                                name: name.to_string(),
+                                function: Function {
+                                    name: demangle(&function),
+                                    location: Some(parse_debug_loc(options, location)),
+                                },
+                                message: construct_message(options, args),
+                                hotness,
+                            };
+                            remarks.insert(remark);
+                        }
+                    }
+
+                    parse::Remark::Passed {} => {}
                 }
             }
             Err(error) => {

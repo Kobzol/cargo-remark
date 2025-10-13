@@ -11,7 +11,7 @@ use rayon::iter::IntoParallelIterator;
 use rayon::prelude::*;
 use rust_embed::RustEmbed;
 
-use crate::remark::{Line, Location, MessagePart, Remark};
+use crate::remark::{Function, Line, Location, MessagePart, Remark};
 use crate::utils::callback::LoadCallback;
 use crate::utils::data_structures::Map;
 
@@ -105,12 +105,24 @@ pub fn render_remarks(
         // Used for filtering duplicated remarks caused by function.name being inconsistent from inlining
         // excludes function.name from consideration
         fn dedup_key(&self) -> (&str, &str, &[MessagePart], Option<&i32>, Option<&Location>) {
+            let Remark {
+                pass,
+                name,
+                function:
+                    Function {
+                        name: _,
+                        location: function_location,
+                    },
+                message,
+                hotness,
+            } = self.0;
+
             (
-                &self.0.pass,
-                &self.0.name,
-                &self.0.message,
-                self.0.hotness.as_ref(),
-                self.0.function.location.as_ref(),
+                pass,
+                name,
+                message,
+                hotness.as_ref(),
+                function_location.as_ref(),
             )
         }
     }

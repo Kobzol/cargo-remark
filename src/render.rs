@@ -11,7 +11,7 @@ use rayon::iter::IntoParallelIterator;
 use rayon::prelude::*;
 use rust_embed::RustEmbed;
 
-use crate::remark::{Line, Location, MessagePart, Remark};
+use crate::remark::{Function, Line, Location, MessagePart, Remark};
 use crate::utils::callback::LoadCallback;
 use crate::utils::data_structures::Map;
 
@@ -90,38 +90,109 @@ pub fn render_remarks(
         std::fs::write(path, data).context("Cannot copy asset file to output directory")?;
     }
 
+    // Filter duplicated remarks caused by inlining
+    // When the compiler performs inlining, it can attribute multiple remarks with the same contents
+    // to the same *location*, which only differ by the function (name) that they refer to.
+    // This is usually just noise in the UI. So before outputting the remarks, we normalize them by
+    // removing such duplicates.
+
+    // In order to avoid unnecessary allocations, this logic is a bit complicated.
+    // We sort the remarks and then dedup consecutive entries that have everything except the
+    // function name the same.
+    #[derive(PartialEq, Eq, Hash, PartialOrd, Ord)]
+    struct NormalizedRemark {
+        pass: String,
+        name: String,
+        message: Vec<MessagePart>,
+        hotness: Option<i32>,
+        location: Option<Location>,
+        // NOTE: This attribute has to be the last field!!!
+        function_name: String,
+    }
+
+    let mut remarks: Vec<NormalizedRemark> = remarks
+        .into_par_iter()
+        .map(|remark| {
+            let Remark {
+                pass,
+                name,
+                function:
+                    Function {
+                        name: function_name,
+                        location,
+                    },
+                message,
+                hotness,
+            } = remark;
+            NormalizedRemark {
+                pass,
+                name,
+                message,
+                hotness,
+                location,
+                function_name,
+            }
+        })
+        .collect();
+    remarks.par_sort();
+    remarks.dedup_by(|a, b| {
+        #[derive(PartialEq)]
+        struct RemarkKey<'a> {
+            pass: &'a str,
+            name: &'a str,
+            message: &'a [MessagePart],
+            hotness: Option<i32>,
+            location: Option<&'a Location>,
+        }
+
+        impl<'a> RemarkKey<'a> {
+            fn from(remark: &'a NormalizedRemark) -> Self {
+                Self {
+                    pass: &remark.pass,
+                    name: &remark.name,
+                    message: &remark.message,
+                    hotness: remark.hotness,
+                    location: remark.location.as_ref(),
+                }
+            }
+        }
+
+        RemarkKey::from(a) == RemarkKey::from(b)
+    });
+
     let mut file_to_remarks: Map<&str, Vec<RemarkSourceEntry>> = Map::default();
 
     // Create remark list page
     let remark_entries = remarks
         .iter()
         .map(|r| {
-            let Remark {
+            let NormalizedRemark {
                 pass: _,
                 name,
-                function,
                 message,
                 hotness,
+                location,
+                function_name,
             } = r;
 
             let entry = RemarkIndexEntry {
                 name,
-                location: function.location.as_ref().map(|location| {
+                location: location.as_ref().map(|location| {
                     let mut buffer = String::new();
                     render_remark_link(&mut buffer, location, Some(SRC_DIR_NAME), None);
                     buffer
                 }),
-                function: encode_safe(&function.name),
+                function: encode_safe(function_name),
                 message: format_message(message, Some(SRC_DIR_NAME)),
                 hotness: *hotness,
             };
-            if let Some(ref location) = function.location {
+            if let Some(ref location) = location {
                 file_to_remarks
                     .entry(&location.file)
                     .or_default()
                     .push(RemarkSourceEntry {
                         name,
-                        function: &function.name,
+                        function: &function_name,
                         line: location.line,
                         // Inside the file, the link should be relative to the src directory
                         message: format_message(message, None),

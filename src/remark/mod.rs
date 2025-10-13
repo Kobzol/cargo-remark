@@ -28,7 +28,7 @@ const EXPECTED_EXTENSION: &str = ".opt.yaml";
 pub type Line = u32;
 pub type Column = u32;
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Location {
     pub file: String,
     pub line: Line,
@@ -41,7 +41,7 @@ pub struct Function {
     pub location: Option<Location>,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum MessagePart {
     String(String),
     AnnotatedString { message: String, location: Location },

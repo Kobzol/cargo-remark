@@ -221,10 +221,8 @@ fn append_vectorization_analysis_to_remarks(
                 // todo: if-let chain if in Rust 2024
                 if remark.function.location == missed_remark.function.location {
                     if let Some(MessagePart::String(str)) = &remark.message.first() {
-                        let reason = str
-                            .strip_prefix("loop not vectorized: ")
-                            .expect("should start with 'loop not vectorized: '");
-                        Some(reason)
+                        // returns None if the string doesn't have the wanted prefix
+                        str.strip_prefix("loop not vectorized: ")
                     } else {
                         None
                     }

@@ -1,13 +1,12 @@
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::fs::File;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 use anyhow::Context;
-use hashbrown::HashSet;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use regex::Regex;
 use serde::Deserialize;
@@ -56,31 +55,6 @@ pub struct Remark {
     pub hotness: Option<i32>,
 }
 
-//Exclude function name from hash and equal
-//because it leads to multiple identical remarks in the rendered remarks with no visible difference
-impl Hash for Remark {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.pass.hash(state);
-        self.name.hash(state);
-
-        self.function.location.hash(state);
-
-        self.message.hash(state);
-        self.hotness.hash(state);
-    }
-}
-
-impl PartialEq for Remark {
-    fn eq(&self, other: &Self) -> bool {
-        self.pass == other.pass
-            && self.name == other.name
-            && self.function.location == other.function.location
-            && self.message == other.message
-            && self.hotness == other.hotness
-    }
-}
-impl Eq for Remark {}
-
 #[derive(Default)]
 pub struct RemarkLoadOptions {
     /// Load remarks from external crates
@@ -96,7 +70,7 @@ pub struct RemarkLoadOptions {
 pub fn load_remarks_from_file<P: AsRef<Path>>(
     path: P,
     options: &RemarkLoadOptions,
-) -> anyhow::Result<HashSet<Remark>> {
+) -> anyhow::Result<Vec<Remark>> {
     let path = path.as_ref();
 
     let file =
@@ -105,7 +79,7 @@ pub fn load_remarks_from_file<P: AsRef<Path>>(
 
     if file.metadata()?.len() == 0 {
         log::debug!("File is empty");
-        return Ok(HashSet::new());
+        return Ok(vec![]);
     }
 
     let reader = BufReader::new(file);
@@ -114,9 +88,9 @@ pub fn load_remarks_from_file<P: AsRef<Path>>(
     Ok(remarks)
 }
 
-fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> HashSet<Remark> {
-    let mut remarks = HashSet::new();
-    let mut analysis_remarks = HashSet::new();
+fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Vec<Remark> {
+    let mut remarks = Vec::new();
+    let mut analysis_remarks = Vec::new();
     for document in serde_yaml::Deserializer::from_reader(reader) {
         match parse::Remark::deserialize(document) {
             Ok(remark) => {
@@ -159,7 +133,7 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ha
                                 message: construct_message(options, args),
                                 hotness,
                             };
-                            remarks.insert(remark);
+                            remarks.push(remark);
                         }
                     }
                     parse::Remark::Analysis(remark) => {
@@ -205,7 +179,7 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ha
                                 message: construct_message(options, args),
                                 hotness,
                             };
-                            analysis_remarks.insert(remark);
+                            analysis_remarks.push(remark);
                         }
                     }
 
@@ -223,9 +197,9 @@ fn parse_remarks<R: std::io::Read>(reader: R, options: &RemarkLoadOptions) -> Ha
 }
 
 fn append_vectorization_analysis_to_remarks(
-    remarks: HashSet<Remark>,
-    analysis: HashSet<Remark>,
-) -> HashSet<Remark> {
+    remarks: Vec<Remark>,
+    analysis: Vec<Remark>,
+) -> Vec<Remark> {
     // gets the reason why loop wasn't vectorized from analysis remarks,
     // then appends the analysis remarks to the missed vectorization remark
     // this does edit the original remark
@@ -245,7 +219,7 @@ fn append_vectorization_analysis_to_remarks(
             .iter()
             .filter_map(|remark| {
                 // todo: if-let chain if in Rust 2024
-                if remark.function == missed_remark.function {
+                if remark.function.location == missed_remark.function.location {
                     if let Some(MessagePart::String(str)) = &remark.message.first() {
                         let reason = str
                             .strip_prefix("loop not vectorized: ")
@@ -384,7 +358,7 @@ pub fn load_remarks_from_dir<P: AsRef<Path>>(
         callback.start(files.len() as u64);
     }
 
-    let remarks: Vec<(PathBuf, anyhow::Result<HashSet<Remark>>)> = files
+    let remarks: Vec<(PathBuf, anyhow::Result<Vec<Remark>>)> = files
         .into_par_iter()
         .map(|file| {
             let remarks = load_remarks_from_file(&file, &options);
@@ -405,8 +379,6 @@ pub fn load_remarks_from_dir<P: AsRef<Path>>(
             }
         })
         .flatten()
-        .collect::<HashSet<Remark>>() // hashset in case different files share remarks, does remove some duplicate remarks
-        .into_iter()
         .collect();
 
     if let Some(callback) = callback {
@@ -459,7 +431,6 @@ fn demangle(function: &str) -> String {
 mod tests {
     use crate::remark::{parse_remarks, Remark, RemarkLoadOptions};
     use crate::RustcSourceRoot;
-    use hashbrown::HashSet;
     use std::path::PathBuf;
 
     struct Options {
@@ -838,7 +809,7 @@ Args:
         "###);
     }
 
-    fn parse(input: &str, opts: Options) -> HashSet<Remark> {
+    fn parse(input: &str, opts: Options) -> Vec<Remark> {
         parse_remarks(input.as_bytes(), &opts.into())
     }
 }
